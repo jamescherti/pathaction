@@ -18,7 +18,9 @@ sudo pip install pathaction
 
 The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
 
-### Rule-set file
+## The .pathaction.yaml rule-set file
+
+### Example 1
 
 The `pathaction` command-line tool utilizes regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
 
@@ -48,22 +50,7 @@ Each rule defined in the rule set file `.pathaction.yaml` must include at least:
 - The matching rule (e.g. a file name pattern like `*.py` or a regex `.*py$`).
 - The command or a shell command (the command and its arguments can be templated with Jinja2).
 
-## How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
-
-It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
-
-### Integrate with Vim
-
-If the preferred editor is Vim, the following line can be added to the
-`~/.vimrc`:
-
-```viml
-nnoremap <silent> <C-e> :!pathaction "%"<CR>
-```
-
-## Examples
-
-### Example with a source code file
+### Example 2
 
 This is what the rule-set file `.pathaction.yaml` contains:
 ```yaml
@@ -97,7 +84,7 @@ The command above command will:
 2. Attempt to locate `.pathaction.yaml` or `.pathaction.yml` in the directory where the source code is located or in its parent directories. The search for `.pathaction.yaml` follows the same approach as `git` uses to find `.gitignore` in the current and parent directories.
 3. Execute the command defined in `.pathaction.yaml` (e.g. PathAction will execute the command `python {{ file }}` on all `*.py` files).
 
-### Another example with `~/.pathaction.yaml`
+### Example 3
 
 Here is another example of a rule-set file located at `~/.pathaction.yaml`:
 ```yaml
@@ -157,6 +144,21 @@ actions:
 | shebang_list   | Returns the shebang as a list (e.g. ["/usr/bin/env", "bash"])
 | shebang_quote  | Returns the shebang as a quoted string (e.g. "/usr/bin/env '/usr/bin/command name'")
 | which          | Locates a command (raises an error if the command is not found)
+
+## Frequently Asked Questions
+
+### How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
+
+It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
+
+### Integrate with Vim
+
+If the preferred editor is Vim, the following line can be added to the
+`~/.vimrc`:
+
+```viml
+nnoremap <silent> <C-e> :!pathaction "%"<CR>
+```
 
 ## License
 
