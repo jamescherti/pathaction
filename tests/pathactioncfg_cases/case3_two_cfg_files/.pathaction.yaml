@@ -1,0 +1,7 @@
+---
+
+actions:
+  - path_match: "*"
+    tags: main
+    list_commands:
+      - "true"

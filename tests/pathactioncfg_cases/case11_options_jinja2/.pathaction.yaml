@@ -1,0 +1,14 @@
+---
+
+options:
+  shell_path: "{{ 'sh' | which }}"
+  debug: true
+  verbose: true
+
+actions:
+  - path_match: "{{ cwd|dirname }}/file4.bash"
+    tags: main
+    cwd: "{{ cwd }}/test_cwd"
+    list_commands:
+      - "true"
+      - "cwdcwd"

@@ -1,0 +1,69 @@
+---
+
+options:
+  debug: true
+  verbose: true
+
+actions:
+  - path_match: "*/doesnotexist.py"
+    tags: main
+    list_commands:
+      - "true"
+      - "doesnotexist"
+
+  - path_match: "{{ cwd|dirname }}/file4.bash"
+    tags: main
+    cwd: "{{ cwd }}/test_cwd"
+    list_commands:
+      - "true"
+      - "cwdcwd"
+
+  - path_match: "*/file3.nh"
+    tags: main
+    cwd: "{{ cwd }}/test_cwd"
+    list_commands:
+      - "true"
+      - "cwdcwd"
+
+  # Error between 2x success
+  - path_match: "*.nh"
+    tags: main
+    list_commands:
+      - "true"
+      - "{{ file }}"
+      - "true"
+
+  # This one will be executed
+  - path_match: ["*.py"]
+    tags: main
+    path_match_exclude: ["*.pyc"]
+    shell: true
+    list_commands:
+      - "python {{ file | basename }}"
+
+  - path_regex: [".*\\.sh"]
+    tags: main
+    path_regex_exclude: [".*\\.bh"]
+    list_commands:
+      - ["/usr/bin/env", "sh", "{{ file | basename }}"]
+    cwd: "{{ file | dirname }}"
+
+  - path_match: ["*.html", "*.htm"]
+    tags: main
+    list_commands:
+      - "true lynx /dev/null"
+    cwd: "{{ file | basename }}"
+    shell: true
+    timeout: 60
+    comment: "This is a comment"
+
+  - path_match: ["*.html", "*.htm"]
+    tags: main
+    list_commands:
+      - "true WRONG ORDER /dev/null"
+
+  - path_regex: [".*\\.sh"]
+    tags: main
+    path_regex_exclude: [".*\\.bh"]
+    list_commands:
+      - "WRONG ORDER: true sh /dev/null"

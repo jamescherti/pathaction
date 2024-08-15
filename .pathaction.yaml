@@ -1,0 +1,14 @@
+---
+
+actions:
+  - path_match: "*"
+    shell: true
+    tags: main
+    command: 'PYTHONPATH=".:$PYTHONPATH" pytest -v -v --cov-report=term --cov-report=html:htmlcov tests/*'
+
+  - path_match: "*"
+    shell: true
+    tags: install
+    list_commands:
+      - 'PYTHONPATH=".:$PYTHONPATH" pytest -v -v --cov-report=term --cov-report=html:htmlcov tests/*'
+      - "if [[ $VIRTUAL_ENV != '' ]]; then pip install .; else pip install --user .; fi"

@@ -1,0 +1,22 @@
+---
+
+actions:
+  - mimetype: "text/x-python"
+    tags: main
+    list_commands:
+      - "false is good"
+
+  - mimetype_regex: "^app.*/x-sh$"
+    tags: main
+    list_commands:
+      - "false this is bash"
+
+  - mimetype_match: "t*/plain"
+    tags: main
+    list_commands:
+      - "false this is a text file"
+
+  - path_match: "*"
+    tags: main
+    list_commands:
+      - "true"

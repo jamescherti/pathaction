@@ -1,0 +1,6 @@
+---
+
+actions:
+  - path_match: "{{ [cwd, 'file.py'] | joinpath }}"
+    tags: main
+    command: "true"

@@ -1,0 +1,7 @@
+---
+
+actions:
+  - path_match: "*/stdout_stderr"
+    tags: main
+    shell: true
+    command: 'echo "stdout_test"; echo "stderr_test" >&2'

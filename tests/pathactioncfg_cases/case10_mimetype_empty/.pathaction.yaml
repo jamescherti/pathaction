@@ -1,0 +1,14 @@
+---
+
+actions:
+  - mimetype_match: "*"
+    tags:
+      - main
+    list_commands:
+      - "false there is a mimetype"
+
+  - path_match: "*"
+    tags:
+      - main
+    list_commands:
+      - "true there is no mimetype"

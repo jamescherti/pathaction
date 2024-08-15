@@ -1,0 +1,12 @@
+---
+
+actions:
+  - path_regex: "[0-9++"
+    tags: main
+    list_commands:
+      - "true"
+
+  - path_match: "*"
+    tags: main
+    list_commands:
+      - "true"
