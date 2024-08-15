@@ -6,6 +6,15 @@ The `pathaction` command-line tool allows executing specific commands on particu
 
 The `pathaction` tool is similar to a Makefile for any file or directory within the filesystem hierarchy (e.g. a collection of independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It can, for example, be used to Run, Debug, and Compile your projects. The predefined rules in the user-created rule-set file (`.pathaction.yaml`) enable the creation of various actions (e.g., Install, Run, Debug, Compile) for the same type of files (e.g., C/C++ files, Python files, Ruby files, ini file, images, etc.).
 
+## Installation
+
+Here is how to install `pathaction` using pip:
+```
+sudo pip install git+https://github.com/jamescherti/pathaction
+```
+
+The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
+
 ### Rule-set file
 
 PathAction employs regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
@@ -33,10 +42,8 @@ The command above will load the `.pathaction.yaml` file not only from the direct
 Jinja2 templating can be used to dynamically replace parts of the commands defined in the rule-set file with information about the file being executed, such as its filename and path, among other details (more on this below). In the command `"python {{ file|quote }}"`, the placeholder `{{ file|quote }}` will be dynamically substituted with the path to the source code passed as a parameter to the PathAction command-line tool.
 
 Each rule defined in the rule set file `.pathaction.yaml` must include at least:
-- The matching rule (e.g. a file name pattern like `*.py` or a regex
-  `.*py$`).
-- The command or a shell command (the command and its arguments can be
-  templated with Jinja2).
+- The matching rule (e.g. a file name pattern like `*.py` or a regex `.*py$`).
+- The command or a shell command (the command and its arguments can be templated with Jinja2).
 
 ## How to Integrate PathAction with Your Favorite Editor (e.g. Vim)
 
@@ -140,3 +147,17 @@ actions:
 | shebang_list   | Returns the shebang as a list (e.g. ["/usr/bin/env", "bash"])
 | shebang_quote  | Returns the shebang as a quoted string (e.g. "/usr/bin/env '/usr/bin/command name'")
 | which          | Locates a command (raises an error if the command is not found)
+
+## License
+
+Copyright (c) 2024 [James Cherti](https://www.jamescherti.com)
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+## Links
+
+- [pathaction @GitHub](https://github.com/jamescherti/pathaction)
