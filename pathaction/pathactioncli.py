@@ -44,6 +44,12 @@ CFG_ALLOWED_DIRS = Path("~/.config/pathaction/permissions.yml") \
 class PathActionCli:
     """Command line interface."""
 
+    def ask_user_press_enter(self):
+        if self.args.confirm_after:
+            print()
+            input("Press enter...")
+            sys.exit(1)
+
     def __init__(self,
                  require_tty=False,
                  limit_loop: int = -1,
@@ -58,18 +64,19 @@ class PathActionCli:
         self.limit_loop = limit_loop
         self.limit_load_cfg = limit_load_cfg
 
-        # Checks
-        if require_tty and not sys.stdin.isatty():
-            print("Error: stdin is not a tty.", file=sys.stderr)
-            self.errno = 1
-            sys.exit(1)
-
         # Init
         colorama.init()
         setproctitle(Path(sys.argv[0]).name)  # type: ignore
 
         # Load PathAction cfg
         self.parse_args()
+
+        # Checks
+        if require_tty and not sys.stdin.isatty():
+            print("Error: stdin is not a tty.", file=sys.stderr)
+            self.errno = 1
+            self.ask_user_press_enter()
+            sys.exit(1)
 
         # Allow directory
         if not allowed_dirs:
@@ -94,6 +101,7 @@ class PathActionCli:
                         print(f"Error: The path you provided is not a "
                               f"directory: {source_code}", file=sys.stderr)
                         self.errno = 1
+                        self.ask_user_press_enter()
                         sys.exit(1)
 
                     allowed_dirs.add(source_code, permanent=True)
@@ -102,7 +110,6 @@ class PathActionCli:
                         "The directory has been permanently added to the "
                         f"allow list: {source_code}"
                     )
-                    self.errno = 1
                     sys.exit(0)
 
                 if not allowed_dirs.is_allowed(source_code):
@@ -112,14 +119,12 @@ class PathActionCli:
                           "parent directories with the command-line "
                           "option '--allow-dir'.", file=sys.stderr)
                     self.errno = 1
+                    self.ask_user_press_enter()
                     sys.exit(1)
             except PathActionError as err:
                 print(f"Error: {err}.", file=sys.stderr)
-                # if self.args.confirm_after:
-                #     input("Press enter...")
-                #     sys.exit(1)
-
                 self.errno = 1
+                self.ask_user_press_enter()
                 sys.exit(1)
 
             try:
@@ -131,6 +136,7 @@ class PathActionCli:
                 Util.pcolor(Util.COLOR_ERROR)
                 Util.pcolor(Util.COLOR_ERROR, f"Error: {err}")
                 self.errno = 1
+                self.ask_user_press_enter()
                 sys.exit(1)
 
             if self.args.list:
@@ -153,6 +159,8 @@ class PathActionCli:
             else:
                 print()
 
+        if self.errno:
+            self.ask_user_press_enter()
         sys.exit(self.errno)  # pragma: no cover
 
     def main(self):
