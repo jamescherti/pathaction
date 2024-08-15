@@ -1,10 +1,13 @@
-# pathaction - Rules To Execute Commands On Any File
+# Pathaction - Rules To Execute Commands On Any File
+![License](https://img.shields.io/github/license/jamescherti/pathaction)
 
 ## Introduction
 
-The `pathaction` command-line tool allows executing specific commands on particular types of files or directories. The primary advantage of the `pathaction` tool is that it enables executing any file (e.g. source code, text file, image, video, configuration file, etc.) without much thought. Simply relying on the predefined rules is all that is needed.
+The `pathaction` command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool. The tool uses a rule-set file to determine which command to execute. Additionally, Jinja2 templating can be employed in the rule-set file to further customize the commands.
 
-The `pathaction` tool is similar to a Makefile for any file or directory within the filesystem hierarchy (e.g. a collection of independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It can, for example, be used to Run, Debug, and Compile your projects. The predefined rules in the user-created rule-set file (`.pathaction.yaml`) enable the creation of various actions (e.g., Install, Run, Debug, Compile) for the same type of files (e.g., C/C++ files, Python files, Ruby files, ini file, images, etc.).
+The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
+
+By using predefined rules in a user-created rule-set file (`.pathaction.yaml`), `pathaction` enables the creation of various tagged actions (e.g., Install, Run, Debug, Compile) customized for different file types (e.g., C/C++ files, Python files, Ruby files, ini files, images, etc.).
 
 ## Installation
 
@@ -17,7 +20,7 @@ The pip command above will install the `pathaction` executable in the directory 
 
 ### Rule-set file
 
-PathAction employs regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
+The `pathaction` command-line tool utilizes regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
 
 First off, we are going to create and change the current directory to the project directory:
 ```
@@ -30,24 +33,24 @@ After that, we are going to permanently allow `pathaction` to read rule-set file
 $ pathaction --allow-dir ~/project
 ```
 
-This is a security measure to ensure that only the directories that are explicitly allowed could execute arbitrary commands using PathAction.
+This is a security measure to ensure that only the directories that are explicitly allowed could execute arbitrary commands using the `pathaction` tool.
 
 For instance, consider the following command:
 ```
 $ pathaction file.py
 ```
 
-The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
+The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
 
-Jinja2 templating can be used to dynamically replace parts of the commands defined in the rule-set file with information about the file being executed, such as its filename and path, among other details (more on this below). In the command `"python {{ file|quote }}"`, the placeholder `{{ file|quote }}` will be dynamically substituted with the path to the source code passed as a parameter to the PathAction command-line tool.
+Jinja2 templating can be used to dynamically replace parts of the commands defined in the rule-set file with information about the file being executed, such as its filename and path, among other details (more on this below). In the command `"python {{ file|quote }}"`, the placeholder `{{ file|quote }}` will be dynamically substituted with the path to the source code passed as a parameter to the `pathaction` command-line tool.
 
 Each rule defined in the rule set file `.pathaction.yaml` must include at least:
 - The matching rule (e.g. a file name pattern like `*.py` or a regex `.*py$`).
 - The command or a shell command (the command and its arguments can be templated with Jinja2).
 
-## How to Integrate PathAction with Your Favorite Editor (e.g. Vim)
+## How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
 
-It is recommended to configure your source code editor to execute source code with the PathAction command when pressing a specific key combination, such as `CTRL-E`.
+It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
 
 ### Integrate with Vim
 
@@ -66,14 +69,22 @@ This is what the rule-set file `.pathaction.yaml` contains:
 ```yaml
 ---
 actions:
-  main:
-    - path_match: "*.py"
-      command:
-        - "python"
-        - "{{ file }}"
+  # *.py files
+  - path_match: "*.py"
+    tags: main
+    command:
+      - "python"
+      - "{{ file }}"
 
-    - path_match: "*.sh"
-      command: "bash {{ file|quote }}"
+  # *.sh files
+  - path_match: "*.sh"
+    tags:
+      - main
+    command: "bash {{ file|quote }}"
+
+  - path_match: "*.sh"
+    tags: install
+    command: "cp {{ file|quote }} ~/.local/bin/"
 ```
 
 Consider the following command:
@@ -100,17 +111,16 @@ options:
 actions:
   # A shell is used to run the following command:
   - path_match: "*.py"
+    path_match_exclude: "*/not_this_one.py"    # optional
     tags:
       - main
-    path_match_exclude: "*/not_this_one.py"    # optional
     shell: true
     command: "python {{ file|quote }}"
 
   # The command is executed without a shell when shell=false
   - path_regex: '^.*ends_with_string$'
-    tags:
-      - main
     regex_path_exclude: '^.*not_this_one$'   # optional
+    tags: main
     cwd: "{{ file|dirname }}"          # optional
     shell: false                       # optional
     command:
