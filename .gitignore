@@ -1,5 +1,6 @@
 /coverage.json
 /build
+/dist
 /pathaction.egg-info
 *.pyc
 */__pycache__
