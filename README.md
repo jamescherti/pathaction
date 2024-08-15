@@ -13,7 +13,7 @@ By using predefined rules in a user-created rule-set file (`.pathaction.yaml`), 
 
 Here is how to install `pathaction` using pip:
 ```
-sudo pip install git+https://github.com/jamescherti/pathaction
+sudo pip install pathaction
 ```
 
 The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
@@ -171,3 +171,4 @@ You should have received a copy of the GNU General Public License along with thi
 ## Links
 
 - [pathaction @GitHub](https://github.com/jamescherti/pathaction)
+- [pathaction @PyPI](https://pypi.org/project/pathaction/)
