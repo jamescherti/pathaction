@@ -5,7 +5,7 @@
 
 The `pathaction` command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool. The tool uses a *.pathaction.yaml* rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be employed in the rule-set file to further customize the commands.
 
-Executing any file can look like this:
+You can execute a file with the following commands:
 ```
 pathfile -t install file.py
 ```
@@ -14,6 +14,8 @@ Or:
 ```
 pathfile -t main another-file.jpg
 ```
+
+(Note: The -t option specifies the tag, which allows you to apply a tagged rule.)
 
 The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
