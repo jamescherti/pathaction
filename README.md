@@ -1,4 +1,4 @@
-# Pathaction - Rules To Execute Commands On Any File
+# Pathaction - Create .pathaction.yaml rule-set for executing commands on any file
 ![License](https://img.shields.io/github/license/jamescherti/pathaction)
 
 ## Introduction
@@ -8,6 +8,11 @@ The `pathaction` command-line tool enables the execution of specific commands on
 The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
 By using predefined rules in a user-created rule-set file (`.pathaction.yaml`), `pathaction` enables the creation of various tagged actions (e.g., Install, Run, Debug, Compile) customized for different file types (e.g., C/C++ files, Python files, Ruby files, ini files, images, etc.).
+
+## Requirements
+
+- Python
+- pip
 
 ## Installation
 
@@ -162,7 +167,7 @@ nnoremap <silent> <C-e> :!pathaction "%"<CR>
 
 ## License
 
-Copyright (c) 2024 [James Cherti](https://www.jamescherti.com)
+Copyright (c) 2021-2024 [James Cherti](https://www.jamescherti.com)
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
