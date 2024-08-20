@@ -15,9 +15,9 @@ Or:
 pathaction -t edit another-file.jpg
 ```
 
-(Note: The -t option specifies the tag, which allows you to apply a tagged rule.)
+(Note: The -t option specifies the tag, allowing you to apply a tagged rule.)
 
-This is how a `.pathaction.yaml` rule-set file looks like:
+Here’s an example of what a `.pathaction.yaml` rule-set file looks like:
 ``` yaml
 ---
 actions:
@@ -33,6 +33,8 @@ actions:
       - show
     command: "gimp {{ file|quote }}"
 ```
+
+(Note: There are many ways to match paths, including using regex. See below for more details.)
 
 The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
