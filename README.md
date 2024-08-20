@@ -7,15 +7,32 @@ The `pathaction` command-line tool enables the execution of specific commands on
 
 You can execute a file with the following commands:
 ```
-pathaction -t install file.py
+pathaction -t main file.py
 ```
 
 Or:
 ```
-pathaction -t main another-file.jpg
+pathaction -t edit another-file.jpg
 ```
 
 (Note: The -t option specifies the tag, which allows you to apply a tagged rule.)
+
+This is how a `.pathaction.yaml` looks like:
+``` yaml
+---
+actions:
+  - path_match: "*.py"
+    tags: main
+    command:
+      - "python"
+      - "{{ file }}"
+
+  - path_match: "*.jpg"
+    tags:
+      - edit
+      - show
+    command: "gimp {{ file|quote }}"
+```
 
 The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
