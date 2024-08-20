@@ -193,7 +193,7 @@ If the preferred editor is Vim, the following line can be added to the
 `~/.vimrc`:
 
 ```viml
-nnoremap <silent> <C-e> :!pathaction "%"<CR>
+nnoremap <silent> <C-e> :!pathaction -t main "%"<CR>
 ```
 
 ## License
