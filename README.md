@@ -7,12 +7,12 @@ The `pathaction` command-line tool enables the execution of specific commands on
 
 You can execute a file with the following commands:
 ```
-pathfile -t install file.py
+pathaction -t install file.py
 ```
 
 Or:
 ```
-pathfile -t main another-file.jpg
+pathaction -t main another-file.jpg
 ```
 
 (Note: The -t option specifies the tag, which allows you to apply a tagged rule.)
