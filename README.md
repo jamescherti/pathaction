@@ -17,7 +17,7 @@ pathaction -t edit another-file.jpg
 
 (Note: The -t option specifies the tag, which allows you to apply a tagged rule.)
 
-This is how a `.pathaction.yaml` looks like:
+This is how a `.pathaction.yaml` rule-set file looks like:
 ``` yaml
 ---
 actions:
