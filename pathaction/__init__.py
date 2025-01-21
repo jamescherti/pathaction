@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2021-2024 James Cherti
+# Copyright (C) 2021-2025 James Cherti
 # URL: https://github.com/jamescherti/pathaction
 #
 # This program is free software: you can redistribute it and/or modify it under
