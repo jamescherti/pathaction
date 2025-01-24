@@ -210,3 +210,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 - [pathaction @GitHub](https://github.com/jamescherti/pathaction)
 - [pathaction @PyPI](https://pypi.org/project/pathaction/)
+
+Plugins for editors:
+- [pathaction.el](https://github.com/jamescherti/pathaction.el): An Emacs package that allows executing the `pathaction` command-line tool directly from Emacs.
