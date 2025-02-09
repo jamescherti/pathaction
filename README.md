@@ -47,12 +47,12 @@ By using predefined rules in a user-created rule-set file (`.pathaction.yaml`), 
 
 ## Installation
 
-Here is how to install `pathaction` using pip:
+To install the *pathaction* executable locally in `~/.local/bin/pathaction` using [pip](https://pypi.org/project/pip/), run:
 ```
 sudo pip install pathaction
 ```
 
-The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
+(Omitting the `--user` flag will install *pathaction* system-wide in `/usr/local/bin/pathaction`.)
 
 ## The .pathaction.yaml rule-set file
 
