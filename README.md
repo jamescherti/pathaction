@@ -214,4 +214,5 @@ You should have received a copy of the GNU General Public License along with thi
 - [pathaction @PyPI](https://pypi.org/project/pathaction/)
 
 Plugins for editors:
-- [pathaction.el](https://github.com/jamescherti/pathaction.el): An Emacs package that allows executing the `pathaction` command-line tool directly from Emacs.
+- Emacs package: [pathaction.el](https://github.com/jamescherti/pathaction.el): Executing the `pathaction` command-line tool directly from Emacs.
+- Vim plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction): Executing the `pathaction` command-line tool directly from Vim.
