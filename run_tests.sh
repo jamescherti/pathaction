@@ -2,4 +2,7 @@
 set -e
 export PYTHONPATH=".:$PYTHONPATH"
 set -u
-pytest -v -v --cov-report=term --cov-report=html:htmlcov tests/*
+# rm -f .coverage coverage.json
+python -m coverage run -m \
+  pytest -v -v --cov-report=term tests/*
+python -m coverage json
