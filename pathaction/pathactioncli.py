@@ -50,6 +50,7 @@ class PathActionCli:
             input("Press enter...")
             sys.exit(1)
 
+    # pylint: disable=too-many-statements
     def __init__(self,
                  require_tty=False,
                  limit_loop: int = -1,
@@ -73,7 +74,7 @@ class PathActionCli:
 
         # Checks
         if require_tty and not sys.stdin.isatty():
-            print("Error: stdin is not a tty.", file=sys.stderr)
+            Util.error("stdin is not a tty.")
             self.errno = 1
             self.ask_user_press_enter()
             sys.exit(1)
@@ -89,6 +90,7 @@ class PathActionCli:
         # Prepare
         list_pathaction_cfg = []
         first = False
+        # pylint: disable=too-many-try-statements
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
@@ -98,8 +100,8 @@ class PathActionCli:
                 if self.args.allow_dir:
                     CFG_ALLOWED_DIRS.parent.mkdir(parents=True, exist_ok=True)
                     if not source_code.is_dir():
-                        print(f"Error: The path you provided is not a "
-                              f"directory: {source_code}", file=sys.stderr)
+                        Util.error("The path you provided is not a "
+                                   f"directory: {source_code}")
                         self.errno = 1
                         self.ask_user_press_enter()
                         sys.exit(1)
@@ -113,16 +115,18 @@ class PathActionCli:
                     sys.exit(0)
 
                 if not allowed_dirs.is_allowed(source_code):
-                    print("Error: The following directory is not "
-                          f"allowed: '{source_code.parent}'", file=sys.stderr)
-                    print("You can allow the directory or one of its "
-                          "parent directories with the command-line "
-                          "option '--allow-dir'.", file=sys.stderr)
+                    Util.error(
+                        "The following directory is not "
+                        f"allowed: '{source_code.parent}'\n"
+                        "You can allow the directory or one of its "
+                        "parent directories with the command-line "
+                        "option '--allow-dir'."
+                    )
                     self.errno = 1
                     self.ask_user_press_enter()
                     sys.exit(1)
             except PathActionError as err:
-                print(f"Error: {err}.", file=sys.stderr)
+                Util.error(f"{err}.")
                 self.errno = 1
                 self.ask_user_press_enter()
                 sys.exit(1)
@@ -341,6 +345,7 @@ class PathActionCli:
                 question += " [a=again, n=no] "
                 answers = ["a", "n"]
 
+            # pylint: disable=too-many-try-statements
             try:
                 answer = Util.ask_question(
                     question=question,

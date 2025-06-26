@@ -20,6 +20,7 @@
 
 import os
 import select
+import shutil
 import signal
 import sys
 from collections.abc import Callable
@@ -42,6 +43,11 @@ class Util:
     COLOR_ERROR = Fore.RED
     COLOR_SUCCESS = Fore.GREEN
     COLOR_QUESTION = Fore.YELLOW
+
+    @staticmethod
+    def error(message):
+        print(os.path.basename(sys.argv[0]) + ": Error: " + message,
+              file=sys.stderr)
 
     @staticmethod
     def which(cmd: str,
