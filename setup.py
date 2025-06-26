@@ -23,7 +23,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="pathaction",
-    version="0.9.5",
+    version="0.9.6",
     packages=find_packages(),
     description="Rules to execute commands on any file",
     long_description=((Path(__file__).parent.resolve().joinpath("README.md"))
