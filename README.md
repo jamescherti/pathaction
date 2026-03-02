@@ -7,10 +7,9 @@ The `pathaction` command-line tool enables the execution of specific commands on
 
 The tool uses a `.pathaction.yaml` rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be used in the rule-set file to further customize the commands.
 
-The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
+The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow you to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
 (If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
-
 
 ### Example
 
