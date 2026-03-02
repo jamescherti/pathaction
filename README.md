@@ -1,4 +1,4 @@
-# Pathaction - Rule-Driven Command Execution for Any File
+# Pathaction – Execute Custom, Rule-Driven Commands on Any File or Directory, Just Like a Makefile but for Your Entire Filesystem
 ![License](https://img.shields.io/github/license/jamescherti/pathaction)
 
 ## Introduction
