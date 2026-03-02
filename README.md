@@ -5,7 +5,7 @@
 
 The [pathaction](https://github.com/jamescherti/pathaction) command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool. The tool uses a `.pathaction.yaml` rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be employed in the rule-set file to further customize the commands.
 
-(If you use Emacs, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a Vim plugin: [vim-pathaction @GitHub](https://github.com/jamescherti/vim-pathaction))
+(If you use Emacs, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a Vim plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
 
 You can execute a file with the following commands:
 ```
