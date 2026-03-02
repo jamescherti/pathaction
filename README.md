@@ -1,4 +1,4 @@
-# Pathaction - Create .pathaction.yaml rule-set files for executing commands on any file
+# Pathaction - Rule-Driven Command Execution for Any File
 ![License](https://img.shields.io/github/license/jamescherti/pathaction)
 
 ## Introduction
