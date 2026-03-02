@@ -3,11 +3,16 @@
 
 ## Introduction
 
-The **pathaction** command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool.
+The `pathaction` command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool.
 
 The tool uses a `.pathaction.yaml` rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be used in the rule-set file to further customize the commands.
 
+The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
+
 (If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
+
+
+### Example
 
 You can execute a file with the following commands:
 ```
@@ -39,10 +44,6 @@ actions:
 ```
 
 (Note: There are many ways to match paths, including using regex. See below for more details.)
-
-The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
-
-Predefined rules in a user-created rule-set file (`.pathaction.yaml`) allow the creation of various tagged actions (e.g., Install, Run, Debug, Compile) customized for different file types (e.g., C/C++ files, Python files, Ruby files, INI files, images, etc.).
 
 ## Requirements
 
