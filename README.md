@@ -42,7 +42,7 @@ actions:
 
 The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow the user to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
 
-By using predefined rules in a user-created rule-set file (`.pathaction.yaml`), `pathaction` enables the creation of various tagged actions (e.g., Install, Run, Debug, Compile) customized for different file types (e.g., C/C++ files, Python files, Ruby files, ini files, images, etc.).
+Predefined rules in a user-created rule-set file (`.pathaction.yaml`) allow the creation of various tagged actions (e.g., Install, Run, Debug, Compile) customized for different file types (e.g., C/C++ files, Python files, Ruby files, INI files, images, etc.).
 
 ## Requirements
 
