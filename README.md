@@ -65,7 +65,7 @@ sudo pip install pathaction
 
 By default, `pathaction` does not read rule-set files such as `.pathaction.yaml` from arbitrary directories. The target directory must be explicitly permitted.
 
-Run the following command to allow `pathaction` to read rule-set files from the project directory:
+For example, to allow Pathaction to load `.pathaction.yaml` rules from `~/projects` and its subdirectories, run the following command:
 
 ```
 pathaction --allow-dir ~/projects
