@@ -7,11 +7,12 @@ The `pathaction` is a flexible command-line tool for running commands on files a
 
 Think of `pathaction` like a Makefile for your entire filesystem. It uses a `.pathaction.yaml` file to figure out which command to run, and you can even use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type, like setting up one tag to run a script, and another to debug it.
 
-This tool is ideal for software developers who manage multiple projects across diverse ecosystems and want to eliminate the cognitive load of switching between different build tools, environment configurations, and deployment methods. With Pathaction, you just run one single command on any file and trust that it gets handled correctly.
-
-(If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
+This tool is for software developers who manage multiple projects across diverse ecosystems and want to eliminate the cognitive load of switching between different build tools, environment configurations, and deployment methods. With Pathaction, you just run one single command on any file and trust that it gets handled correctly.
 
 If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** to help more software developers discover its benefits.
+
+- Requirements: Python
+- Editor plugins: If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
 
 ### Example
 
@@ -27,7 +28,7 @@ pathaction -t edit another-file.jpg
 
 (Note: The -t option specifies the tag, allowing you to apply a tagged rule.)
 
-Here’s an example of what a `.pathaction.yaml` rule-set file looks like:
+Here's an example of what a `.pathaction.yaml` rule-set file looks like:
 ``` yaml
 ---
 actions:
@@ -45,11 +46,6 @@ actions:
 ```
 
 (Note: There are many ways to match paths, including using regex. See below for more details.)
-
-## Requirements
-
-- Python
-
 ## Installation
 
 To install the *pathaction* executable locally in `~/.local/bin/pathaction` using [pip](https://pypi.org/project/pip/), run:
