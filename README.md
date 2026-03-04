@@ -71,8 +71,6 @@ For example, to allow Pathaction to load `.pathaction.yaml` rules from `~/projec
 pathaction --allow-dir ~/projects
 ```
 
-After this command completes, `.pathaction.yaml` files located in the `~/projects` directory will be recognized and processed.
-
 ### Rule-set files: `.pathaction.yaml`
 
 The `pathaction` command-line tool uses regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
