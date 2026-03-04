@@ -11,6 +11,8 @@ This tool is ideal for software developers who manage multiple projects across d
 
 (If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
 
+If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** to help more software developers discover its benefits.
+
 ### Example
 
 You can execute a file with the following commands:
