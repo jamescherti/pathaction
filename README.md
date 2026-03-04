@@ -73,8 +73,6 @@ After this command completes, `.pathaction.yaml` files located in the `~/project
 
 ### Rule-set files: `.pathaction.yaml`
 
-#### Example 1
-
 The `pathaction` command-line tool uses regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
 
 For instance, consider the following command:
@@ -90,7 +88,7 @@ Each rule defined in the rule set file `.pathaction.yaml` must include at least:
 - The matching rule (e.g. a file name pattern like `*.py` or a regex `.*py$`).
 - The command or a shell command (the command and its arguments can be templated with Jinja2).
 
-### Example 2
+### Example 1
 
 This is what the rule-set file `.pathaction.yaml` contains:
 ```yaml
@@ -124,7 +122,7 @@ The command above command will:
 2. Attempt to locate `.pathaction.yaml` or `.pathaction.yml` in the directory where the source code is located or in its parent directories. The search for `.pathaction.yaml` follows the same approach as `git` uses to find `.gitignore` in the current and parent directories.
 3. Execute the command defined in `.pathaction.yaml` (e.g. PathAction will execute the command `python {{ file }}` on all `*.py` files).
 
-### Example 3
+### Example 2
 
 Here is another example of a rule-set file located at `~/.pathaction.yaml`:
 ```yaml
