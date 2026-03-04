@@ -14,13 +14,11 @@ If this tool helps your workflow, please show your support by **⭐ starring pat
 You can execute a file with the following commands:
 ```
 pathaction -t main file.py
-
 ```
 
 Or:
 ```
 pathaction -t edit another-file.jpg
-
 ```
 
 The `-t` option specifies the tag, allowing you to apply a tagged rule.
@@ -41,7 +39,6 @@ actions:
       - edit
       - show
     command: "gimp {{ file|quote }}"
-
 ```
 
 There are many ways to match paths, including using regex. See below for more details.
@@ -61,7 +58,6 @@ There are many ways to match paths, including using regex. See below for more de
 To install *pathaction*, run:
 ```
 sudo pip install pathaction
-
 ```
 
 ## Usage
@@ -74,7 +70,6 @@ For example, to allow Pathaction to load `.pathaction.yaml` rules from `~/projec
 
 ```
 pathaction --allow-dir ~/projects
-
 ```
 
 ### Rule-set files: `.pathaction.yaml`
@@ -84,7 +79,6 @@ The `pathaction` command-line tool uses regular expressions or filename pattern 
 For instance, consider the following command:
 ```
 pathaction -t main ~/projects/project-name/sub-project/file.py
-
 ```
 
 The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
@@ -119,14 +113,12 @@ actions:
   - path_match: "*.sh"
     tags: install
     command: "cp {{ file|quote }} ~/.local/bin/"
-
 ```
 
 Consider the following command:
 
 ```sh
 pathaction source_code.py
-
 ```
 
 The command above will:
@@ -166,7 +158,6 @@ actions:
     command:
       - "python"
       - "{{ file }}"
-
 ```
 
 ## Jinja2 Variables and Filters
