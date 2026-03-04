@@ -196,8 +196,6 @@ While `make` relies on project-specific files with strict syntax, Pathaction use
 
 Pathaction uses Jinja2 templating to construct shell commands dynamically, substituting details like filenames or directories on the fly. It integrates with editors like Vim or Emacs to execute the current file using `pathaction`, offering a flexible alternative to writing new Makefiles for every task while leaving complex dependency management to `make`.
 
-### Why should I use it instead of make?
-
 ### How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
 
 It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
