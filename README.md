@@ -1,7 +1,7 @@
 # Pathaction | A universal Makefile for your entire filesystem: Run rule-driven commands on any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The `pathaction` is a flexible command-line tool for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
+The `pathaction` tool is a flexible command-line utility for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
 
 Think of `pathaction` like a Makefile for your entire filesystem. It uses a `.pathaction.yaml` file to figure out which command to run, and you can even use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type, like setting up one tag to run a script, and another to debug it.
 
@@ -14,17 +14,20 @@ If this tool helps your workflow, please show your support by **⭐ starring pat
 You can execute a file with the following commands:
 ```
 pathaction -t main file.py
+
 ```
 
 Or:
 ```
 pathaction -t edit another-file.jpg
+
 ```
 
 The `-t` option specifies the tag, allowing you to apply a tagged rule.
 
-Here's an example of what a `.pathaction.yaml` rule-set file looks like:
-``` yaml
+Here is an example of what a `.pathaction.yaml` rule-set file looks like:
+
+```yaml
 ---
 actions:
   - path_match: "*.py"
@@ -38,6 +41,7 @@ actions:
       - edit
       - show
     command: "gimp {{ file|quote }}"
+
 ```
 
 There are many ways to match paths, including using regex. See below for more details.
@@ -46,7 +50,7 @@ There are many ways to match paths, including using regex. See below for more de
 
 - Python
 
-## Editors plugins
+## Editor Plugins
 
 - **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
 - **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
@@ -57,6 +61,7 @@ There are many ways to match paths, including using regex. See below for more de
 To install *pathaction*, run:
 ```
 sudo pip install pathaction
+
 ```
 
 ## Usage
@@ -69,6 +74,7 @@ For example, to allow Pathaction to load `.pathaction.yaml` rules from `~/projec
 
 ```
 pathaction --allow-dir ~/projects
+
 ```
 
 ### Rule-set files: `.pathaction.yaml`
@@ -78,19 +84,22 @@ The `pathaction` command-line tool uses regular expressions or filename pattern 
 For instance, consider the following command:
 ```
 pathaction -t main ~/projects/project-name/sub-project/file.py
+
 ```
 
-The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
+The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
 
 Jinja2 templating can be used to dynamically replace parts of the commands defined in the rule-set file with information about the file being executed, such as its filename and path, among other details (more on this below). In the command `"python {{ file|quote }}"`, the placeholder `{{ file|quote }}` will be dynamically substituted with the path to the source code passed as a parameter to the `pathaction` command-line tool.
 
 Each rule defined in the rule set file `.pathaction.yaml` must include at least:
-- The matching rule (e.g. a file name pattern like `*.py` or a regex `.*py$`).
-- The command or a shell command (the command and its arguments can be templated with Jinja2).
+
+* The matching rule (e.g., a file name pattern like `*.py` or a regex `.*py$`).
+* The command or a shell command (the command and its arguments can be templated with Jinja2).
 
 ### Example 1
 
 This is what the rule-set file `.pathaction.yaml` contains:
+
 ```yaml
 ---
 actions:
@@ -110,21 +119,26 @@ actions:
   - path_match: "*.sh"
     tags: install
     command: "cp {{ file|quote }} ~/.local/bin/"
+
 ```
 
 Consider the following command:
+
 ```sh
-$ pathaction source_code.py
+pathaction source_code.py
+
 ```
 
-The command above command will:
-1. Load the `source_code.py` file,
+The command above will:
+
+1. Load the `source_code.py` file.
 2. Attempt to locate `.pathaction.yaml` or `.pathaction.yml` in the directory where the source code is located or in its parent directories. The search for `.pathaction.yaml` follows the same approach as `git` uses to find `.gitignore` in the current and parent directories.
-3. Execute the command defined in `.pathaction.yaml` (e.g. PathAction will execute the command `python {{ file }}` on all `*.py` files).
+3. Execute the command defined in `.pathaction.yaml` (e.g., pathaction will execute the command `python {{ file }}` on all `*.py` files).
 
 ### Example 2
 
 Here is another example of a rule-set file located at `~/.pathaction.yaml`:
+
 ```yaml
 ---
 
@@ -145,13 +159,14 @@ actions:
 
   # The command is executed without a shell when shell=false
   - path_regex: '^.*ends_with_string$'
-    regex_path_exclude: '^.*not_this_one$'   # optional
+    regex_path_exclude: '^.*not_this_one$'  # optional
     tags: main
-    cwd: "{{ file|dirname }}"          # optional
-    shell: false                       # optional
+    cwd: "{{ file|dirname }}"               # optional
+    shell: false                            # optional
     command:
       - "python"
       - "{{ file }}"
+
 ```
 
 ## Jinja2 Variables and Filters
@@ -162,7 +177,7 @@ actions:
 |----------------|---------------------------------------------------
 | {{ file }}     | Replaced with the full path to the source code.
 | {{ cwd }}      | Refers to the current working directory.
-| {{ env }}      | Represents the operating system environment variables (dictionary).
+| {{ env }}      | Represents the operating system environment variables (dict).
 | {{ pathsep }}  | Denotes the path separator
 
 ### Jinja2 Filters
@@ -181,12 +196,12 @@ actions:
 | expandvars     | Equivalent to the Python method `os.path.expandvars`
 | shebang        | Loads the shebang from a file (e.g. Loads the first line from a Python file `#!/usr/bin/env python`)
 | shebang_list   | Returns the shebang as a list (e.g. ["/usr/bin/env", "bash"])
-| shebang_quote  | Returns the shebang as a quoted string (e.g. "/usr/bin/env '/usr/bin/command name'")
+| shebang_quote  | Returns the shebang as a quoted string (e.g. `"/usr/bin/env '/usr/bin/command name'"`)
 | which          | Locates a command (raises an error if the command is not found)
 
 ## Frequently Asked Questions
 
-### Does Pathaction walk the filesystem from current directory to the top in search of .pathaction.yaml ruleset files?
+### Does pathaction walk the filesystem from the current directory to the top in search of .pathaction.yaml ruleset files?
 
 Pathaction walks from the directory containing the file passed to it and merges `.pathaction.yaml` rules from all allowed parent directories.
 
@@ -214,7 +229,7 @@ Shebangs are fine for basic execution, but they have limitations that Pathaction
 
 A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With `pathaction`, you can use tags. Passing `pathaction -t run file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
 
-### How is `pathaction` different `xdg-open`?
+### How is `pathaction` different from `xdg-open`?
 
 File associations such as `xdg-open` apply globally. Pathaction uses cascading YAML files similar to `.gitignore`. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
 
