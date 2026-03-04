@@ -57,32 +57,29 @@ To install *pathaction*, run:
 sudo pip install pathaction
 ```
 
-## The .pathaction.yaml rule-set file
+## Usage
 
-### Example 1
+### Allow a directory
+
+By default, `pathaction` does not read rule-set files such as `.pathaction.yaml` from arbitrary directories. The target directory must be explicitly permitted.
+
+Run the following command to allow `pathaction` to read rule-set files from the project directory:
+
+```
+pathaction --allow-dir ~/projects
+```
+
+After this command completes, `.pathaction.yaml` files located in the `~/projects` directory will be recognized and processed.
+
+### Rule-set files: `.pathaction.yaml`
+
+#### Example 1
 
 The `pathaction` command-line tool uses regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
 
-#### Step 1: Allow the directory
-
-First off, we are going to create and change the current directory to the project directory:
-```
-mkdir ~/project
-cd ~/project
-```
-
-After that, we are going to permanently allow `pathaction` to read rule-set files (`.pathaction.yaml`) from the current directory using the command:
-```
-$ pathaction --allow-dir ~/project
-```
-
-#### Step 2: Execute pathaction
-
-This is a security measure to ensure that only the directories that are explicitly allowed could execute arbitrary commands using the `pathaction` tool.
-
 For instance, consider the following command:
 ```
-pathaction -t main ~/project/file.py
+pathaction -t main ~/projects/file.py
 ```
 
 The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
