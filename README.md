@@ -200,9 +200,9 @@ There is a security measure by default: loading rules is allowed only in directo
 
 ### What are the differences between make and pathaction?
 
-The `make` tool centers on targets and dependency tracking, making it good for compiling software based on file timestamps. In contrast, the `pathaction` tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
+The make tool centers on targets and dependency tracking, making it good for compiling software based on file timestamps. In contrast, the pathaction tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
 
-While `make` relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define rules in your home directory that can be overridden by specific settings within individual project folders.
+While make relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define rules in your home directory that can be overridden by specific settings within individual project folders.
 
 For example, a Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`, similar to how Git handles .gitignore files.
 
@@ -210,19 +210,19 @@ For example, a Python script in `~/project_a` can be routed to a local virtual e
 
 It is very different from `find | xargs`.
 
-The `pathaction` tool functions like a customizable, developer-focused `xdg-open`. It acts as the intelligent router that receives each file path and automatically determines the correct command to execute based on your defined rules.
+The pathaction tool functions like a customizable, developer-focused xdg-open. It acts as the intelligent router that receives each file path and automatically determines the correct command to execute based on your defined rules.
 
-Just as `xdg-open` relies on rigid system MIME types to launch GUI applications, Pathaction uses your hierarchical `.pathaction.yaml` configurations and Jinja2 templating to dynamically run commands.
+Just as xdg-open relies on rigid system MIME types to launch GUI applications, Pathaction uses your hierarchical `.pathaction.yaml` configurations and Jinja2 templating to dynamically run commands.
 
-### How is `pathaction` different from a shebang?
+### How is pathaction different from a shebang?
 
 Shebangs are fine for basic execution, but they have limitations that Pathaction was built to address.
 
-A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With `pathaction`, you can use tags. Passing `pathaction -t run file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
+A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With pathaction, you can use tags. Passing `pathaction -t run file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
 
-### How is `pathaction` different from `xdg-open`?
+### How is pathaction different from xdg-open?
 
-File associations such as `xdg-open` apply globally. Pathaction uses cascading YAML files similar to how Git handles `.gitignore` files. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
+File associations such as xdg-open apply globally. Pathaction uses cascading YAML files similar to how Git handles `.gitignore` files. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
 
 In addition to that, Pathaction uses Jinja2 templating, allowing you to dynamically build complex shell commands based on the file name, its parent directory, or environment variables.
 
