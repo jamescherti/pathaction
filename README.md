@@ -50,7 +50,7 @@ There are many ways to match paths, including using regex. See below for more de
 
 - **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
 - **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
-- Other editors: contributions are welcome.
+- Other editors: Contributions are welcome.
 
 ## Installation
 
