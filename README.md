@@ -222,7 +222,7 @@ A shebang only defines how to execute a script. It cannot tell your system how t
 
 ### How is `pathaction` different from `xdg-open`?
 
-File associations such as `xdg-open` apply globally. Pathaction uses cascading YAML files similar to `.gitignore`. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
+File associations such as `xdg-open` apply globally. Pathaction uses cascading YAML files similar to how Git handles `.gitignore` files. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
 
 In addition to that, Pathaction uses Jinja2 templating, allowing you to dynamically build complex shell commands based on the file name, its parent directory, or environment variables.
 
