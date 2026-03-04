@@ -61,7 +61,9 @@ sudo pip install pathaction
 
 ### Example 1
 
-The `pathaction` command-line tool utilizes regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
+The `pathaction` command-line tool uses regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
+
+#### Step 1: Allow the directory
 
 First off, we are going to create and change the current directory to the project directory:
 ```
@@ -74,11 +76,13 @@ After that, we are going to permanently allow `pathaction` to read rule-set file
 $ pathaction --allow-dir ~/project
 ```
 
+#### Step 2: Execute pathaction
+
 This is a security measure to ensure that only the directories that are explicitly allowed could execute arbitrary commands using the `pathaction` tool.
 
 For instance, consider the following command:
 ```
-$ pathaction file.py
+pathaction -t main file.py
 ```
 
 The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
