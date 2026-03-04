@@ -48,7 +48,9 @@ There are many ways to match paths, including using regex. See below for more de
 
 ## Editors plugins
 
-Editor plugins: If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
+- **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
+- **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
+- Other editors: contributions are welcome.
 
 ## Installation
 
