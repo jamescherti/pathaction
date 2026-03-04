@@ -5,9 +5,7 @@
 
 The `pathaction` is a flexible command-line tool for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
 
-The tool uses a `.pathaction.yaml` rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be used in the rule-set file to further customize the commands.
-
-The `pathaction` tool can be viewed as a type of Makefile but is applicable to any file or directory within the filesystem hierarchy (e.g., it can execute any file such as independent scripts, Ansible playbooks, Python scripts, configuration files, etc.). It executes specific actions (i.e., commands) using tags that allow you to specify different commands for the same type of file (e.g., a tag for execution, another tag for debugging, another tag for installation, etc.).
+Think of `pathaction` like a Makefile for your entire filesystem. It uses a `.pathaction.yaml` file to figure out which command to run, and you can even use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type, like setting up one tag to run a script, and another to debug it.
 
 (If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
 
