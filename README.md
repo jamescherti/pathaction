@@ -21,7 +21,7 @@ Or:
 pathaction -t edit another-file.jpg
 ```
 
-(Note: The -t option specifies the tag, allowing you to apply a tagged rule.)
+The `-t` option specifies the tag, allowing you to apply a tagged rule.
 
 Here's an example of what a `.pathaction.yaml` rule-set file looks like:
 ``` yaml
@@ -40,7 +40,7 @@ actions:
     command: "gimp {{ file|quote }}"
 ```
 
-(Note: There are many ways to match paths, including using regex. See below for more details.)
+There are many ways to match paths, including using regex. See below for more details.
 
 ## Requirements
 
@@ -52,7 +52,7 @@ Editor plugins: If you use **Emacs**, you can use the [pathaction.el](https://gi
 
 ## Installation
 
-To install the *pathaction* executable locally in `~/.local/bin/pathaction` using [pip](https://pypi.org/project/pip/), run:
+To install *pathaction*, run:
 ```
 sudo pip install pathaction
 ```
