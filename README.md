@@ -57,8 +57,6 @@ To install the *pathaction* executable locally in `~/.local/bin/pathaction` usin
 sudo pip install pathaction
 ```
 
-(Omitting the `--user` flag will install *pathaction* system-wide in `/usr/local/bin/pathaction`.)
-
 ## The .pathaction.yaml rule-set file
 
 ### Example 1
@@ -188,26 +186,52 @@ actions:
 
 ## Frequently Asked Questions
 
+### Does Pathaction walk the filesystem from current directory to the top in search of .pathaction.yaml ruleset files?
+
+Pathaction walks from the directory containing the file passed to it and merges `.pathaction.yaml` rules from all allowed parent directories.
+
+There is a security measure by default: loading rules is allowed only in directories that have been explicitly permitted using `pathaction --allow-dir ~/dir/projects/`, which enables access to `~/dir/projects/` and all its subdirectories. If the entire home directory is allowed with `pathaction --allow-dir ~/`, rules can be loaded from any directory within the home directory.
+
 ### What are the differences between make and pathaction?
 
 The `make` tool centers on targets and dependency tracking, making it good for compiling software based on file timestamps. In contrast, the `pathaction` tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
 
-While `make` relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define global execution rules in your home directory that can be overridden by specific settings within individual project folders.
+While `make` relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define rules in your home directory that can be overridden by specific settings within individual project folders.
 
-Pathaction uses Jinja2 templating to construct shell commands dynamically, substituting details like filenames or directories on the fly. It integrates with editors like Vim or Emacs to execute the current file using `pathaction`, offering a flexible alternative to writing new Makefiles for every task while leaving complex dependency management to `make`.
+For example, a Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`, similar to how Git handles .gitignore files.
 
-### How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
+### What is the difference between Pathaction and a command such as `find | xargs`?
 
-It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
+It is very different from `find | xargs`.
 
-### Integrate with Vim
+The `pathaction` tool functions like a customizable, developer-focused `xdg-open`. It acts as the intelligent router that receives each file path and automatically determines the correct command to execute based on your defined rules.
 
-If the preferred editor is Vim, the following line can be added to the
-`~/.vimrc`:
+Just as `xdg-open` relies on rigid system MIME types to launch GUI applications, Pathaction uses your hierarchical `.pathaction.yaml` configurations and Jinja2 templating to dynamically run commands.
 
-```viml
-nnoremap <silent> <C-e> :!pathaction -t main "%"<CR>
-```
+### How is `pathaction` different from a shebang?
+
+Shebangs are fine for basic execution, but they have limitations that Pathaction was built to address.
+
+A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With `pathaction`, you can use tags. Passing `pathaction -t run file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
+
+### How is `pathaction` different `xdg-open`?
+
+File associations such as `xdg-open` apply globally. Pathaction uses cascading YAML files similar to `.gitignore`. A Python script in `~/project_a` can be routed to a local virtual environment, while a Python script in `~/project_a/project_b` can trigger a Docker execution simply by defining different `.pathaction.yaml` files in those directories. Pathaction loads and merges all `.pathaction.yaml` ruleset files found in parent directories. This means that any rule in `~/project_a/project_b/.pathaction.yaml` that does not match a file falls back to the rules defined in `~/project_a/.pathaction.yaml`.
+
+In addition to that, Pathaction uses Jinja2 templating, allowing you to dynamically build complex shell commands based on the file name, its parent directory, or environment variables.
+
+### How does the author use pathaction?
+
+The author's `.pathaction.yaml` rules function as a universal bridge across distinct software ecosystems.
+
+* For Python, C, C++, and related languages, rules are defined to install dependencies, build projects, execute binaries, run test suites, and launch debuggers.
+* For Ansible, rules automatically upload playbooks to remote servers, execute them, and validate their results.
+* For Emacs, rules integrate file-based actions directly with editor workflows, enabling evaluation, compilation, or linting based on context.
+* For Vim, rules provide similar editor integration, allowing files to trigger build, run, or formatting actions without manual command construction.
+
+Pathaction operates as an IDE-like action layer for the filesystem. Instead of embedding logic inside each editor or build system, actions are described declaratively and applied uniformly across tools.
+
+The primary advantage is cognitive simplicity. There is no need to memorize complex command-line flags or tool-specific invocation patterns. A file is passed to Pathaction with a semantic tag such as `main`, `install`, or `debug`, and the corresponding rule determines how the operation is executed.
 
 ## License
 
