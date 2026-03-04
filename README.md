@@ -79,7 +79,7 @@ The `pathaction` command-line tool uses regular expressions or filename pattern 
 
 For instance, consider the following command:
 ```
-pathaction -t main ~/projects/file.py
+pathaction -t main ~/projects/project-name/sub-project/file.py
 ```
 
 The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, the priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
@@ -129,6 +129,7 @@ The command above command will:
 Here is another example of a rule-set file located at `~/.pathaction.yaml`:
 ```yaml
 ---
+
 options:
   shell: /bin/bash
   verbose: false
