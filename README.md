@@ -3,7 +3,7 @@
 
 ## Introduction
 
-The `pathaction` command-line tool enables the execution of specific commands on targeted files or directories. Its key advantage lies in its flexibility, allowing users to handle various types of files (such as source code, text files, images, videos, configuration files, and more) simply by passing the file or directory as an argument to the `pathaction` tool.
+`pathaction` is a flexible CLI tool for running commands on files and directories. Just pass a file path as an argument, and it handles the rest-whether you're working with code, media, or configurations.
 
 The tool uses a `.pathaction.yaml` rule-set file to determine which command to execute. Additionally, **Jinja2** templating can be used in the rule-set file to further customize the commands.
 
