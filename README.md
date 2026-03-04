@@ -190,7 +190,7 @@ actions:
 
 ### What are the differences between make and pathaction?
 
-The `make` tool centers on targets and dependency tracking, making it excellent for compiling software based on file timestamps. In contrast, the `pathaction` tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
+The `make` tool centers on targets and dependency tracking, making it good for compiling software based on file timestamps. In contrast, the `pathaction` tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
 
 While `make` relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define global execution rules in your home directory that can be overridden by specific settings within individual project folders.
 
