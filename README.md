@@ -188,6 +188,16 @@ actions:
 
 ## Frequently Asked Questions
 
+### What are the differences between make and pathaction?
+
+The `make` tool centers on targets and dependency tracking, making it excellent for compiling software based on file timestamps. In contrast, the `pathaction` tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
+
+While `make` relies on project-specific files with strict syntax, Pathaction uses YAML files that cascade hierarchically across your filesystem. Much like how Git handles ignore files, Pathaction loads and merges all `.pathaction.yaml` rule-set files found in parent directories. This allows you to define global execution rules in your home directory that can be overridden by specific settings within individual project folders.
+
+Pathaction uses Jinja2 templating to construct shell commands dynamically, substituting details like filenames or directories on the fly. It integrates with editors like Vim or Emacs to execute the current file using `pathaction`, offering a flexible alternative to writing new Makefiles for every task while leaving complex dependency management to `make`.
+
+### Why should I use it instead of make?
+
 ### How to Integrate the pathaction tool with your favorite editor (e.g. Vim)
 
 It is recommended to configure your source code editor to execute source code with the `pathaction` command when pressing a specific key combination, such as `CTRL-E`.
