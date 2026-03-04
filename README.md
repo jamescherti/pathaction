@@ -1,7 +1,5 @@
 # Pathaction | A universal Makefile for your entire filesystem: Run rule-driven commands on any file or directory
-![License](https://img.shields.io/github/license/jamescherti/pathaction)
-
-## Introduction
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 The `pathaction` is a flexible command-line tool for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
 
@@ -10,9 +8,6 @@ Think of `pathaction` like a Makefile for your entire filesystem. It uses a `.pa
 This tool is for software developers who manage multiple projects across diverse ecosystems and want to eliminate the cognitive load of switching between different build tools, environment configurations, and deployment methods. With Pathaction, you just run one single command on any file and trust that it gets handled correctly.
 
 If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** to help more software developers discover its benefits.
-
-- Requirements: Python
-- Editor plugins: If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
 
 ### Example
 
@@ -46,6 +41,15 @@ actions:
 ```
 
 (Note: There are many ways to match paths, including using regex. See below for more details.)
+
+## Requirements
+
+- Python
+
+## Editors plugins
+
+Editor plugins: If you use **Emacs**, you can use the [pathaction.el](https://github.com/jamescherti/pathaction.el) package to execute the `pathaction` command-line tool directly from within Emacs. There is also a **Vim** plugin: [vim-pathaction](https://github.com/jamescherti/vim-pathaction))
+
 ## Installation
 
 To install the *pathaction* executable locally in `~/.local/bin/pathaction` using [pip](https://pypi.org/project/pip/), run:
