@@ -55,10 +55,12 @@ There are many ways to match paths, including using regex. See below for more de
 
 ## Installation
 
-To install *pathaction*, run:
+Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
 ```
-sudo pip install pathaction
+sudo pip install --user pathaction
 ```
+
+The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
 
 ## Usage
 

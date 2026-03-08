@@ -30,7 +30,6 @@ from typing import Any
 import colorama
 import jinja2
 import schema
-from setproctitle import setproctitle
 
 from .allowed_paths import AllowedPaths
 from .exceptions import PathActionError
@@ -67,7 +66,15 @@ class PathActionCli:
 
         # Init
         colorama.init()
-        setproctitle(Path(sys.argv[0]).name)  # type: ignore
+
+        # Optional: setproctitle
+        try:
+            # pylint: disable=import-outside-toplevel
+            from setproctitle import setproctitle
+            setproctitle(Path(sys.argv[0]).name)  # type: ignore
+        except ImportError:
+            # Optional dependency 'setproctitle' is not installed.
+            pass
 
         # Load PathAction cfg
         self.parse_args()

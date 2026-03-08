@@ -40,7 +40,7 @@ setup(
         "jinja2",
         "schema",
         "PyYAML",
-        "setproctitle",
+        # "setproctitle",  # optional
     ],
     python_requires=">=3.6, <4",
     classifiers=[
