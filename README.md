@@ -1,4 +1,4 @@
-# Pathaction | A universal Makefile for your entire filesystem: Run rule-driven commands on any file or directory
+# Pathaction | A universal Makefile for any file ile in your filesystem: Run rule-driven commands on any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 The `pathaction` tool is a flexible command-line utility for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
