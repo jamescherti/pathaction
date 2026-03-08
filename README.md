@@ -139,15 +139,21 @@ options:
   verbose: false
   debug: false
   confirm_after_timeout: 120
+  timeout: 3600
+  # debug: false
+  # verbose: true
+
+vars:
+  variable_name: "variable"
 
 actions:
   # A shell is used to run the following command:
-  - path_match: "*.py"
-    path_match_exclude: "*/not_this_one.py"    # optional
+  - path_match: "*.sh"
+    path_match_exclude: "*/not_this_one.sh"    # optional
     tags:
       - main
     shell: true
-    command: "python {{ file|quote }}"
+    command: "bash {{ file|quote }}"
 
   # The command is executed without a shell when shell=false
   - path_regex: '^.*ends_with_string$'
@@ -158,6 +164,19 @@ actions:
     command:
       - "python"
       - "{{ file }}"
+
+  # Mime types
+  - mimetype: "text/x-python"
+    tags: main
+    shell: true
+    list_commands:
+      - "echo python mime type"
+
+  - mimetype_regex: "^app.*/x-sh$"
+    tags: main
+    shell: true
+    list_commands:
+      - "echo sh file. varible_name={{ variable_name }} "
 ```
 
 ## Jinja2 Variables and Filters
