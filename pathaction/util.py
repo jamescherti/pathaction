@@ -20,7 +20,6 @@
 
 import os
 import select
-import shutil
 import signal
 import sys
 from collections.abc import Callable
