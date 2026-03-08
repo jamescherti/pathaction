@@ -23,9 +23,10 @@ from setuptools import find_packages, setup
 
 setup(
     name="pathaction",
-    version="0.9.7",
+    version="0.9.8",
     packages=find_packages(),
-    description="Rules to execute commands on any file",
+    description=("A universal Makefile for any file in the filesystem: "
+                 "Rule-driven commands for any file or directory"),
     long_description=((Path(__file__).parent.resolve().joinpath("README.md"))
                       .read_text(encoding="utf-8")),
     long_description_content_type="text/markdown",
