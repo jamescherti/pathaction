@@ -45,7 +45,33 @@ There are many ways to match paths, including using regex. See below for more de
 
 ## Requirements
 
-- Python
+Python requirements:
+
+- jinja2
+- schema
+- PyYAML
+
+## Optional Dependencies
+
+The `pathaction` CLI offers optional dependencies that extend its functionality. These extras can be installed according to environment requirements.
+
+* **Colored Terminal Output (`colors`)**: Installs `colorama` to provide consistent cross-platform ANSI color support. This enhances the readability of standard output and error messages.
+
+  ```bash
+  pip install "pathaction[colors]"
+  ```
+
+* **Custom Process Title (`proctitle`)**: Installs `setproctitle` to rename the running process from `python` to `pathaction`. This simplifies identification in system monitoring tools such as `top`, `htop`, and `ps`.
+
+  ```bash
+  pip install "pathaction[proctitle]"
+  ```
+
+To install both extras at once, use a comma-separated list:
+
+```bash
+pip install "pathaction[colors,proctitle]"
+```
 
 ## Editor Plugins
 

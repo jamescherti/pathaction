@@ -1,7 +1,23 @@
 #!/usr/bin/env python
+#
+# Copyright (C) 2021-2026 James Cherti
+# URL: https://github.com/jamescherti/pathaction
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
+#
 """Test the class Util()."""
 
-import pwd
 import os
 from pathlib import Path
 import tempfile
@@ -10,6 +26,12 @@ import unittest.mock
 import pytest
 from pathaction.exceptions import PathActionError
 from pathaction.util import Util
+
+try:
+    import colorama  # type: ignore
+    HAS_COLORAMA: bool = True
+except ImportError:
+    HAS_COLORAMA = False
 
 
 def test_util_which():
@@ -42,10 +64,14 @@ def test_util_which():
     os.chdir(cwd)
 
 
-def test_util_color():
+def test_util_color() -> None:
+    """Test Util.color()."""
     Util.IS_A_TTY = True
+
+    expected_color_string: str = \
+        '\x1b[32mTest\x1b[0m' if HAS_COLORAMA else 'Test'
     assert Util.color(color=Util.COLOR_SUCCESS,
-                      string="Test") == '\x1b[32mTest\x1b[0m'
+                      string="Test") == expected_color_string
 
     Util.IS_A_TTY = False
     assert Util.color(color=Util.COLOR_SUCCESS, string="Test") == "Test"

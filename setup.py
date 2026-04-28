@@ -37,12 +37,15 @@ setup(
         "pytest-cov",
     ],
     install_requires=[
-        "colorama",
         "jinja2",
         "schema",
         "PyYAML",
         # "setproctitle",  # optional
     ],
+    extras_require={
+        "colors": ["colorama"],
+        "proctitle": ["setproctitle"],
+    },
     python_requires=">=3.6, <4",
     classifiers=[
         "Development Status :: 5 - Production/Stable",

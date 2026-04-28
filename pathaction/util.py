@@ -26,7 +26,17 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Union
 
-from colorama import Fore, Style
+try:
+    from colorama import Fore, Style
+except ImportError:
+    class Fore:  # type: ignore
+        WHITE: str = ""
+        GREEN: str = ""
+        RED: str = ""
+        YELLOW: str = ""
+
+    class Style:  # type: ignore
+        RESET_ALL: str = ""
 
 from .exceptions import PathActionError
 

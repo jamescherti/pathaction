@@ -27,7 +27,12 @@ from pathlib import Path
 from pprint import pprint
 from typing import Any
 
-import colorama
+try:
+    import colorama
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
+
 import jinja2
 import schema
 
@@ -65,7 +70,8 @@ class PathActionCli:
         self.limit_load_cfg = limit_load_cfg
 
         # Init
-        colorama.init()
+        if HAS_COLORAMA:
+            colorama.init()
 
         # Optional: setproctitle
         try:
