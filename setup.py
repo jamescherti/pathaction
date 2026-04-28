@@ -23,7 +23,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="pathaction",
-    version="0.9.8",
+    version="0.9.9",
     packages=find_packages(),
     description=("A universal Makefile for any file in the filesystem: "
                  "Rule-driven commands for any file or directory"),
