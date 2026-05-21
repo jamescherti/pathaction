@@ -220,22 +220,20 @@ actions:
 
 ### Jinja2 Filters
 
-| Filter         | Description
-|----------------|---------------------------------------------------
-| quote          | Equivalent to the Python method `shlex.quote`
-| basename       | Equivalent to the Python method `os.path.basename`
-| dirname        | Equivalent to the Python method `os.path.dirname`
-| realpath       | Equivalent to the Python method `os.path.realpath`
-| abspath        | Equivalent to the Python method `os.path.abspath`
-| joinpath       | Equivalent to the Python method `os.path.join`
-| joincmd        | Equivalent to the Python method `os.subprocess.list2cmdline`
-| splitcmd       | Equivalent to the Python method `shlex.split`
-| expanduser     | Equivalent to the Python method `os.path.expanduser`
-| expandvars     | Equivalent to the Python method `os.path.expandvars`
-| shebang        | Loads the shebang from a file (e.g. Loads the first line from a Python file `#!/usr/bin/env python`)
-| shebang_list   | Returns the shebang as a list (e.g. ["/usr/bin/env", "bash"])
-| shebang_quote  | Returns the shebang as a quoted string (e.g. `"/usr/bin/env '/usr/bin/command name'"`)
-| which          | Locates a command (raises an error if the command is not found)
+- **`quote`**: Escapes a string so it can be safely used as a single shell argument. It wraps the text in single quotes and cleanly handles internal single quotes, mitigating risks of shell injection when executing paths with spaces or unusual punctuation.
+- **`basename`**: Extracts the final name or leaf component of a path.
+- **`dirname`**: Grabs the parent directory portion of a file path.
+- **`realpath`**: Resolves all symbolic links, relative tracking segments (like `..`), and duplicate separators to yield the true absolute canonical filesystem path.
+- **`abspath`**: Converts a relative path segment into an absolute filesystem path by pinning it against the current working directory without expanding symbolic links.
+- **`joinpath`**: Efficiently glues path elements together using the host system platform separator.
+- **`joincmd`**: Accepts a sequential list of command-line tokens and groups them into a properly formatted shell execution string.
+- **`splitcmd`**: Parses a raw shell command string back out into an array of distinct arguments while honoring quotation rules and escaped sequences.
+- **`expanduser`**: Detects a leading tilde notation (`~` or `~user`) and replaces it with the corresponding user home directory path.
+- **`expandvars`**: Scans the targeted string for environment tokens matching `$VARIABLE` or `${VARIABLE}` and drops in their active system context values.
+- **`shebang`**: Inspects the target file to extract the first line directly if it begins with a standard executable script prefix (`#!`).
+- **`shebang_list`**: Pulls out the target file's header interpreter line, discards the initial `#!` marker, and turns the contents into a clean token list of instructions.
+- **`shebang_quote`**: Takes the target file's header interpreter line, strips out the initial `#!` marker, and yields the runtime executable directive as a safely balanced shell-quoted string.
+- **`which`**: Investigates all directory entries contained inside the system environment variable `PATH` to locate the exact absolute path of an executable command. Raises a clean execution fault if the binary cannot be tracked down.
 
 ## Frequently Asked Questions
 
