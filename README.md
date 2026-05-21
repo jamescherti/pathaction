@@ -220,20 +220,33 @@ actions:
 
 ### Jinja2 Filters
 
-- **`quote`**: Escapes a string so it can be safely used as a single shell argument. It wraps the text in single quotes and cleanly handles internal single quotes, mitigating risks of shell injection when executing paths with spaces or unusual punctuation.
-- **`basename`**: Extracts the final name or leaf component of a path.
-- **`dirname`**: Grabs the parent directory portion of a file path.
-- **`realpath`**: Resolves all symbolic links, relative tracking segments (like `..`), and duplicate separators to yield the true absolute canonical filesystem path.
-- **`abspath`**: Converts a relative path segment into an absolute filesystem path by pinning it against the current working directory without expanding symbolic links.
-- **`joinpath`**: Efficiently glues path elements together using the host system platform separator.
-- **`joincmd`**: Accepts a sequential list of command-line tokens and groups them into a properly formatted shell execution string.
-- **`splitcmd`**: Parses a raw shell command string back out into an array of distinct arguments while honoring quotation rules and escaped sequences.
-- **`expanduser`**: Detects a leading tilde notation (`~` or `~user`) and replaces it with the corresponding user home directory path.
-- **`expandvars`**: Scans the targeted string for environment tokens matching `$VARIABLE` or `${VARIABLE}` and drops in their active system context values.
-- **`shebang`**: Inspects the target file to extract the first line directly if it begins with a standard executable script prefix (`#!`).
-- **`shebang_list`**: Pulls out the target file's header interpreter line, discards the initial `#!` marker, and turns the contents into a clean token list of instructions.
-- **`shebang_quote`**: Takes the target file's header interpreter line, strips out the initial `#!` marker, and yields the runtime executable directive as a safely balanced shell-quoted string.
-- **`which`**: Investigates all directory entries contained inside the system environment variable `PATH` to locate the exact absolute path of an executable command. Raises a clean execution fault if the binary cannot be tracked down.
+- **`quote`**: Escapes a string for use as a shell argument by wrapping it in single quotes and escaping internal single quotes. This prevents shell injection vulnerabilities when executing paths that contain spaces or punctuation. *Example:* `"/home/user/my file.txt" | quote` evaluates to `'/home/user/my file.txt'`
+
+- **`basename`**: Extracts the trailing filename or leaf component of a filesystem path. *Example:* `"/home/user/src/main.py" | basename` evaluates to `"main.py"`.
+
+- **`dirname`**: Returns the parent directory portion of a filesystem path. *Example:* `"/home/user/src/main.py" | dirname` evaluates to `"/home/user/src"`.
+
+- **`realpath`**: Resolves all symbolic links, relative segments (like `..`), and duplicate separators to return the canonical absolute path. *Example:* `"/usr/bin/../local/bin/python" | realpath` evaluates to `"/usr/local/bin/python"`.
+
+- **`abspath`**: Converts a relative path into an absolute path by prefixing it with the current working directory, without expanding symbolic links. *Example:* `"src/main.py" | abspath` evaluates to `"/home/user/project/src/main.py"`.
+
+- **`joinpath`**: Combines one or more path segments using the system filesystem separator. *Example:* `"/var/log" | joinpath("nginx", "error.log")` evaluates to `"/var/log/nginx/error.log"`.
+
+- **`joincmd`**: Converts an array of command-line tokens into a single properly escaped shell command string. *Example:* `["grep", "-i", "error log"] | joincmd` evaluates to `'grep -i "error log"'`.
+
+- **`splitcmd`**: Parses a raw shell command string into an array of distinct arguments while honoring quotation rules and escape sequences. *Example:* `"git commit -m 'initial release'" | splitcmd` evaluates to `["git", "commit", "-m", "initial release"]`.
+
+- **`expanduser`**: Replaces a leading tilde notation (`~` or `~user`) with the absolute path of the corresponding user home directory. *Example:* `"~/config/tmux.conf" | expanduser` evaluates to `"/home/user/config/tmux.conf"`.
+
+- **`expandvars`**: Substitutes environment variables within a string matching `$VARIABLE` or `${VARIABLE}` with their current active system values. *Example:* `"$HOME/.config" | expandvars` evaluates to `"/home/user/.config"`.
+
+- **`shebang`**: Inspects a file and extracts the first line directly if it begins with an executable script prefix (`#!`). *Example:* `"/home/user/script.sh" | shebang` evaluates to `"#!/usr/bin/env bash"`.
+
+- **`shebang_list`**: Extracts the shebang line from a file, discards the initial `#!` marker, and parses the remaining contents into a clean token array. *Example:* `"/home/user/script.sh" | shebang_list` evaluates to `["/usr/bin/env", "bash"]`.
+
+- **`shebang_quote`**: Extracts the shebang line from a file, strips the `#!` marker, and returns the runtime interpreter directive as a safely balanced, shell-quoted string. *Example:* `"/home/user/script.sh" | shebang_quote` evaluates to `"/usr/bin/env bash"`.
+
+- **`which`**: Searches the system environment variable `PATH` to locate the absolute path of an executable binary. Raises an error if the binary cannot be found. *Example:* `"emacs" | which` evaluates to `"/usr/bin/emacs"`.
 
 ## Frequently Asked Questions
 
