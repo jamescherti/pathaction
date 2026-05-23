@@ -51,6 +51,21 @@ Python requirements:
 - schema
 - PyYAML
 
+## Editor Plugins
+
+- **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
+- **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
+- Other editors: Contributions are welcome.
+
+## Installation
+
+Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
+```
+sudo pip install --user pathaction
+```
+
+The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
+
 ## Optional Dependencies
 
 The `pathaction` CLI offers optional dependencies that extend its functionality. These extras can be installed according to environment requirements.
@@ -72,21 +87,6 @@ To install both extras at once, use a comma-separated list:
 ```bash
 pip install "pathaction[colors,proctitle]"
 ```
-
-## Editor Plugins
-
-- **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
-- **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
-- Other editors: Contributions are welcome.
-
-## Installation
-
-Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
-```
-sudo pip install --user pathaction
-```
-
-The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
 
 ## Usage
 
