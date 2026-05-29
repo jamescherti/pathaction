@@ -29,7 +29,7 @@ from collections import UserDict
 from copy import copy, deepcopy
 from glob import fnmatch  # type: ignore
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import jinja2
 import schema
@@ -44,7 +44,7 @@ class MatchMethods:
     """Match methods that are used by ActionCommand."""
 
     @staticmethod
-    def mimetype_regex(path: str, string: str):
+    def mimetype_regex(path: str, string: str) -> bool:
         """Match a mime type with a regular expression."""
         file_mime = mimetypes.guess_type(path)[0]
         if not file_mime:
@@ -53,8 +53,8 @@ class MatchMethods:
         return bool(re.match(string, file_mime, re.IGNORECASE))
 
     @staticmethod
-    # pylint: disable=missing-function-docstring
-    def mimetype(path: str, string: str):
+    def mimetype(path: str, string: str) -> bool:
+        """Check if file mimetype strictly matches the string."""
         file_mime = mimetypes.guess_type(path)[0]
         if not file_mime:
             return False
@@ -62,8 +62,8 @@ class MatchMethods:
         return file_mime == string
 
     @staticmethod
-    # pylint: disable=missing-function-docstring
-    def mimetype_match(path: str, string: str):
+    def mimetype_match(path: str, string: str) -> Union[bool, None]:
+        """Check if file mimetype matches using fnmatch."""
         file_mime = mimetypes.guess_type(path)[0]
         if not file_mime:
             return None
@@ -72,7 +72,7 @@ class MatchMethods:
 
 
 class ActionCommand(UserDict):
-    """A command in an action."""
+    """Represent a command in an action."""
 
     match_methods = [
         (match_name if match_is_include else f"{match_name}_exclude",
@@ -132,8 +132,8 @@ class ActionCommand(UserDict):
         "tags": "main",
     }
 
-    def __init__(self, path_cfg: str, action_dict: dict):
-        """Init the class ActionCommand()."""
+    def __init__(self, path_cfg: str, action_dict: dict) -> None:
+        """Initialize the ActionCommand class."""
         super().__init__()
 
         schema_data = schema.Schema(ActionCommand.schema_action_command)
@@ -146,7 +146,6 @@ class ActionCommand(UserDict):
         self.default_cwd = os.path.dirname(path_cfg)
         self["path_cfg"] = str(jinja2_escape(path_cfg))
         if "cwd" not in self:
-            # self["cwd"] = jinja2_escape(os.path.dirname(self.path_cfg))
             self["cwd"] = self.default_cwd
 
         # Check the validity of the regex
@@ -169,11 +168,11 @@ class ActionCommand(UserDict):
         # The keys "command" and "list_commands" are mutually exclusive
         if "command" in self and "list_commands" in self:
             err_str = ("The keys 'command' and 'list_commands' cannot be "
-                       "both defined in in " + str(self))
+                       "both defined in " + str(self))
             raise PathActionError(err_str)
 
     def __getattr__(self, key: str) -> Any:
-        """Get attribute."""
+        """Retrieve attribute."""
         return self[key]
 
     def run(self, shell_path: str,
@@ -181,8 +180,8 @@ class ActionCommand(UserDict):
             debug: bool = False) -> Tuple[Union[str, list], int]:
         """Execute a command.
 
-        Return (command, errno)
-
+        Returns:
+            Tuple containing the command and errno.
         """
         first_cmd = True
         if "command" in self:
@@ -224,7 +223,7 @@ class ActionCommand(UserDict):
             cwd = self["cwd"]
 
             if not isinstance(cmd, list) and not isinstance(cmd, str):
-                raise ValueError("'cmd' has to be a list of a string")
+                raise ValueError("'cmd' has to be a list or a string")
 
             if shell:
                 if isinstance(cmd, list):
@@ -238,7 +237,7 @@ class ActionCommand(UserDict):
                 cmd_path = Util.which(cmd[0], cwd=cwd)
                 cmd[0] = str(cmd_path)
 
-            kwargs = {}
+            kwargs: Dict[str, Any] = {}
             kwargs["cwd"] = cwd
             if timeout > 0.0:
                 kwargs["timeout"] = timeout  # type: ignore
@@ -319,8 +318,8 @@ class PathActionCfg:
         'actions': [ActionCommand.schema_action_command],
     }
 
-    def __init__(self, source_code: str):
-        """Init the class PathAction()."""
+    def __init__(self, source_code: str) -> None:
+        """Initialize the class PathActionCfg."""
         self.schema: schema.Schema = schema.Schema(
             PathActionCfg.schema_pathaction_cfg
         )
@@ -340,9 +339,9 @@ class PathActionCfg:
         # reset and load all ".pathaction.yaml" files
         self.reset()
 
-    def reset(self):
-        """Reset the configuration."""
-        self.env: dict = deepcopy(os.environ)
+    def reset(self) -> None:
+        """Reset the configuration variables."""
+        self.env = deepcopy(os.environ)
         self.loaded_yaml_path = []
         self.cfg = {
             "options": deepcopy(PathActionCfg.default_options),
@@ -351,7 +350,7 @@ class PathActionCfg:
         }
 
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
-        """The cwd of an ActionCommand."""
+        """Determine the working directory of an ActionCommand."""
         cwd = action_cmd["cwd"]
         cwd = self._jinja2_render(cwd, cwd=action_cmd.default_cwd)
 
@@ -366,8 +365,6 @@ class PathActionCfg:
     def find_command(self, action_name: str) -> Union[ActionCommand, None]:
         """Find command that matches the absolute path to the source code."""
         abs_source_code = os.path.abspath(self.source_code)
-        # if action_name not in self.cfg["actions"]:
-        #     raise PathActionError("the ActionCommand wasn't found")
 
         is_match_found = False
         action_cmd: Union[ActionCommand, None] = None
@@ -408,7 +405,7 @@ class PathActionCfg:
                     pattern = self._jinja2_render(pattern,
                                                   cwd=cur_action_cmd.cwd)
 
-                    if match_method(abs_source_code, pattern):
+                    if match_method(abs_source_code, str(pattern)):
                         is_match_found = True
                         if match_is_include:
                             action_cmd = cur_action_cmd.copy()
@@ -423,7 +420,7 @@ class PathActionCfg:
         if not action_found:
             raise PathActionError(
                 f"There is no action tagged '{action_name}' for "
-                f"the path {os.path.abspath(self.source_code)}"
+                f"the path {abs_source_code}"
             )
 
         if not action_cmd:
@@ -449,22 +446,22 @@ class PathActionCfg:
 
     def load_cfg(self, yaml_path: str) -> bool:
         """Merge data from the Yaml file."""
-        yaml_path = os.path.abspath(yaml_path)
-        if yaml_path in self.loaded_yaml_path:
+        abs_yaml_path = os.path.abspath(yaml_path)
+        if abs_yaml_path in self.loaded_yaml_path:
             # already loaded
             return False
 
         try:
-            with open(yaml_path, 'r', encoding="utf-8") as fhandler:
+            with open(abs_yaml_path, 'r', encoding="utf-8") as fhandler:
                 raw_cfg = yaml.full_load(fhandler)
         except yaml.YAMLError as err:
-            err_msg = f"cannot load the YAML file '{yaml_path}'. {err}"
+            err_msg = f"cannot load the YAML file '{abs_yaml_path}'. {err}"
             raise PathActionError(err_msg) from err
 
         try:
             self.schema.validate(raw_cfg)
         except schema.SchemaError as err:
-            raise schema.SchemaError(f"'{yaml_path}': {err}") \
+            raise schema.SchemaError(f"'{abs_yaml_path}': {err}") \
                 from err
 
         # Merge default values
@@ -475,12 +472,12 @@ class PathActionCfg:
                 if key == "options":
                     self.cfg["options"] = self._jinja2_render(
                         self.cfg["options"],
-                        cwd=os.path.dirname(yaml_path),
+                        cwd=os.path.dirname(abs_yaml_path),
                     )
 
         if "actions" in raw_cfg:
             new_actions = []
-            path_cfg = os.path.abspath(yaml_path)
+            path_cfg = abs_yaml_path
             for action_cmd in raw_cfg["actions"]:
                 action_cmd = ActionCommand(path_cfg, action_cmd)
                 new_actions.append(action_cmd)
@@ -493,14 +490,13 @@ class PathActionCfg:
                        "does not exist or is not an executable.")
             raise PathActionError(err_msg)
 
-        self.loaded_yaml_path.append(yaml_path)
+        self.loaded_yaml_path.append(abs_yaml_path)
         return True
 
     def load_all_cfg(self, limit: int) -> List[str]:
         """Find and load all 'pathaction.yaml' files."""
         self.reset()
-
-        list_cfg_files: list = []
+        list_cfg_files: List[str] = []
 
         #
         # Find cfg files
@@ -571,8 +567,7 @@ class PathActionCfg:
 
         return loaded_cfg_files
 
-    def _jinja2_render_string(self, string: str,
-                              cwd: str) -> str:
+    def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
         source_code = os.path.abspath(self.source_code)
         env = jinja2.Environment(   # nosec B701
@@ -635,12 +630,12 @@ class PathActionCfg:
 
         j2_template = env.from_string(string)
 
-        j2_vars = {}
+        j2_vars: Dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
         j2_vars.update(dict(file=source_code,
                             env=self.env,
                             cwd=cwd,
-                            pathsep=os.path.sep))
+                            pathsep=os.sep))
 
         return j2_template.render(**j2_vars)
 
@@ -690,10 +685,10 @@ class PathActionCfg:
 
     @property
     def debug(self) -> bool:
-        """Debug."""
+        """Return True if debug is enabled."""
         return bool(self.cfg["options"]["debug"])
 
     @property
     def verbose(self) -> bool:
-        """Verbose."""
+        """Return True if verbose or debug is enabled."""
         return bool(self.debug or self.cfg["options"]["verbose"])
