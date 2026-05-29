@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
-"""The command-line interface of pathaction."""
+"""Represent the command-line interface of pathaction."""
 
 import argparse
 import os
@@ -46,9 +46,10 @@ CFG_ALLOWED_DIRS = Path("~/.config/pathaction/permissions.yml") \
 
 
 class PathActionCli:
-    """Command line interface."""
+    """Provide the Command line interface logic."""
 
-    def ask_user_press_enter(self):
+    def ask_user_press_enter(self) -> None:
+        """Ask the user to press enter to exit."""
         if self.args.confirm_after:
             print()
             input("Press enter...")
@@ -56,14 +57,14 @@ class PathActionCli:
 
     # pylint: disable=too-many-statements
     def __init__(self,
-                 require_tty=False,
+                 require_tty: bool = False,
                  limit_loop: int = -1,
                  limit_load_cfg: int = -1,
-                 allowed_dirs=None):
-        """Parse the arguments and init the command line interface."""
+                 allowed_dirs: Any = None) -> None:
+        """Parse the arguments and initialize the CLI."""
         # Variables
         self.confirm_before_disabled = False
-        self.tag = None
+        self.tag: Any = None
         self.args: Any = None
         self.errno = 0
         self.limit_loop = limit_loop
@@ -107,7 +108,6 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-
                 source_code = Path(pathaction_cfg.source_code).resolve()
 
                 if self.args.allow_dir:
@@ -180,8 +180,8 @@ class PathActionCli:
             self.ask_user_press_enter()
         sys.exit(self.errno)  # pragma: no cover
 
-    def main(self):
-        """Main loop."""
+    def main(self) -> int:
+        """Run the main CLI execution loop."""
         limit_loop = self.limit_loop
 
         ask_execute_again = False
@@ -229,7 +229,7 @@ class PathActionCli:
 
         return errno
 
-    def parse_args(self):
+    def parse_args(self) -> None:
         """Parse the command line arguments."""
         default_action = "main"
 
@@ -288,8 +288,8 @@ class PathActionCli:
 
         self.args = parser.parse_args(sys.argv[1:])
 
-    def load_cfg_files(self):
-        """Load all cfg files."""
+    def load_cfg_files(self) -> None:
+        """Load all valid configuration files."""
         limit_load_cfg = self.limit_load_cfg
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
@@ -334,7 +334,7 @@ class PathActionCli:
         self.tag = action
 
     def ask_execute_again(self) -> bool:
-        """Ask the user if he wants to execute the command again."""
+        """Ask the user if they want to execute the command again."""
         if not self.pathaction_cfg:
             return False
 
@@ -381,8 +381,8 @@ class PathActionCli:
 
         return False  # exit
 
-    def show_action_infos(self, action: ActionCommand):
-        """Show action infos."""
+    def show_action_infos(self, action: ActionCommand) -> None:
+        """Print and format the loaded action information."""
         if self.pathaction_cfg.debug:
             Util.pcolor(Util.COLOR_TEXT,
                         "Merged configurations from Yaml config files:",
@@ -433,7 +433,7 @@ class PathActionCli:
             Util.pcolor(Util.COLOR_TEXT, action.comment, prefix="[COMMENT] ")
 
     def run_from_yaml(self) -> int:
-        """Run the command from a Yaml."""
+        """Run the parsed command configuration."""
         # Run the command
         question = "Do you want to execute the command? [y,n] "
         if self.args.confirm_before and not self.confirm_before_disabled:
