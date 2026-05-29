@@ -101,6 +101,23 @@ class PathActionCli:
             except FileNotFoundError:
                 pass
 
+        if self.args.list_allowed_dirs:
+            for allowed_dir in allowed_dirs:
+                print(allowed_dir)
+            sys.exit(0)
+
+        if self.args.disallow_dir:
+            target_dir = os.path.abspath(self.args.disallow_dir)
+            allowed_dirs.remove(target_dir)
+            allowed_dirs.save_to_yaml(CFG_ALLOWED_DIRS)
+            print(f"Removed from allowed directories: {target_dir}")
+            sys.exit(0)
+
+        if not self.args.list_filenames:
+            Util.error("the following arguments are required: N")
+            self.errno = 1
+            sys.exit(1)
+
         # Prepare
         list_pathaction_cfg = []
         first = False
@@ -238,11 +255,12 @@ class PathActionCli:
         description = os.path.basename(sys.argv[0])
         parser = argparse.ArgumentParser(description=description,
                                          usage="%(prog)s [--option] filename")
+
         parser.add_argument(
             "list_filenames",
             type=str,
             metavar="N",
-            nargs="+",
+            nargs="*",
             help="Path to the files."
         )
 
@@ -286,6 +304,20 @@ class PathActionCli:
             default=False,
             help="Allow pathaction to be executed in the provided "
             "directory and its subdirectories permanently."
+        )
+
+        parser.add_argument(
+            "--disallow-dir",
+            type=str,
+            metavar="DIR",
+            help="Disallow pathaction from being executed in the provided directory."
+        )
+
+        parser.add_argument(
+            "--list-allowed-dirs",
+            action="store_true",
+            default=False,
+            help="List permanently allowed directories."
         )
 
         self.args = parser.parse_args(sys.argv[1:])
