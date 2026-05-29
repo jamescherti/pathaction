@@ -92,13 +92,27 @@ pip install "pathaction[colors,proctitle]"
 
 ### Allow a directory
 
-By default, `pathaction` does not read rule-set files such as `.pathaction.yaml` from arbitrary directories. The target directory must be explicitly permitted.
+By default, `pathaction` does not read rule-set files such as `.pathaction.yaml` from arbitrary directories. The allowed directories must be explicitly permitted.
 
-For example, to allow Pathaction to load `.pathaction.yaml` rules from `~/projects` and its subdirectories, run the following command:
+To allow `pathaction` to load `.pathaction.yaml` rules from a directory and its subdirectories, run the following command:
 
 ```
 pathaction --allow-dir ~/projects
 ```
+
+To view a list of all directories that are currently permitted permanently, use the `--list-allowed-dirs` flag:
+
+```
+pathaction --list-allowed-dirs
+```
+
+To revoke access and remove a specific directory from your allowed list, use the `--disallow-dir` flag:
+
+```
+pathaction --disallow-dir ~/projects
+```
+
+Note: You do not need to provide a file path argument when using the `--list-allowed-dirs` or `--disallow-dir` flags.
 
 ### Rule-set files: `.pathaction.yaml`
 
