@@ -23,7 +23,6 @@ import os
 import subprocess  # nosec B404
 import sys
 import traceback
-from pathlib import Path
 from pprint import pprint
 from typing import Any
 
@@ -41,8 +40,7 @@ from .exceptions import PathActionError
 from .pathactioncfg import ActionCommand, PathActionCfg
 from .util import Util
 
-CFG_ALLOWED_DIRS = Path("~/.config/pathaction/permissions.yml") \
-    .expanduser()
+CFG_ALLOWED_DIRS = os.path.expanduser("~/.config/pathaction/permissions.yml")
 
 
 class PathActionCli:
@@ -78,7 +76,7 @@ class PathActionCli:
         try:
             # pylint: disable=import-outside-toplevel
             from setproctitle import setproctitle
-            setproctitle(Path(sys.argv[0]).name)  # type: ignore
+            setproctitle(os.path.basename(sys.argv[0]))  # type: ignore
         except ImportError:
             # Optional dependency 'setproctitle' is not installed.
             pass
@@ -108,11 +106,13 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = Path(pathaction_cfg.source_code).resolve()
+                source_code = os.path.abspath(pathaction_cfg.source_code)
 
                 if self.args.allow_dir:
-                    CFG_ALLOWED_DIRS.parent.mkdir(parents=True, exist_ok=True)
-                    if not source_code.is_dir():
+                    os.makedirs(
+                        os.path.dirname(CFG_ALLOWED_DIRS),
+                        exist_ok=True)
+                    if not os.path.isdir(source_code):
                         Util.error("The path you provided is not a "
                                    f"directory: {source_code}")
                         self.errno = 1
@@ -130,7 +130,7 @@ class PathActionCli:
                 if not allowed_dirs.is_allowed(source_code):
                     Util.error(
                         "The following directory is not "
-                        f"allowed: '{source_code.parent}'\n"
+                        f"allowed: '{os.path.dirname(source_code)}'\n"
                         "You can allow the directory or one of its "
                         "parent directories with the command-line "
                         "option '--allow-dir'."

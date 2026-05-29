@@ -28,8 +28,7 @@ import subprocess  # nosec B404
 from collections import UserDict
 from copy import copy, deepcopy
 from glob import fnmatch  # type: ignore
-from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jinja2
 import schema

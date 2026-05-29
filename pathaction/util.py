@@ -23,7 +23,6 @@ import select
 import signal
 import sys
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, List, Union
 
 try:
@@ -61,28 +60,30 @@ class Util:
 
     @staticmethod
     def which(cmd: str,
-              cwd: Union[str, Path, None] = None,
-              env_path: Union[str, None] = None) -> Path:
+              cwd: Union[str, None] = None,
+              env_path: Union[str, None] = None) -> str:
         """Return the path which conforms to the given mode on the PATH."""
         if cwd:
-            cwd = Path(cwd).absolute()
+            cwd_str = os.path.abspath(cwd)
         else:
-            cwd = Path.cwd()
+            cwd_str = os.getcwd()
 
-        if not cwd.exists():
-            raise PathActionError(f"'{cwd}' does not exist")
+        if not os.path.exists(cwd_str):
+            raise PathActionError(f"'{cwd_str}' does not exist")
 
-        if not cwd.is_dir():
-            raise PathActionError(f"'{cwd}' is not a directory")
+        if not os.path.isdir(cwd_str):
+            raise PathActionError(f"'{cwd_str}' is not a directory")
 
-        cmd_path = Path(cmd)
+        cmd_path = cmd
         relative = False
-        if cmd.startswith(f"..{os.path.sep}") \
-                or cmd.startswith(f".{os.path.sep}"):
-            cmd_path = cwd.joinpath(cmd_path)
+
+        # Check if the command has a directory component to avoid
+        # string-matching bugs
+        if os.path.dirname(cmd):
+            cmd_path = os.path.normpath(os.path.join(cwd_str, cmd))
             relative = True
 
-        if cmd_path.is_file() and (relative or cmd_path.is_absolute()) \
+        if os.path.isfile(cmd_path) and (relative or os.path.isabs(cmd_path)) \
                 and os.access(cmd_path, os.X_OK):
             return cmd_path
 
@@ -94,13 +95,13 @@ class Util:
             paths_split = []
 
         for path in paths_split:
-            cmd_path = Path(path).joinpath(cmd)
+            cmd_path = os.path.join(path, cmd)
             if os.path.isfile(cmd_path) and os.access(cmd_path, os.X_OK):
                 return cmd_path
 
         raise PathActionError(f"the command '{cmd}' wasn't found "
                               f"in $PATH \"{paths}\" "
-                              f"or in '{cwd}'.")
+                              f"or in '{cwd_str}'.")
 
     @staticmethod
     def color(color: str, string: str = "") -> str:
@@ -176,7 +177,7 @@ class Util:
             path_prefix: Base path prefix.
             path_suffixes: List of file suffixes to attempt appending.
         """
-        result: list = []
+        result: List[str] = []
         for cur_path_suffix in path_suffixes:
             cur_file = f"{path_prefix}{cur_path_suffix}"
             if os.path.isfile(cur_file) and cur_file not in result:
@@ -201,6 +202,7 @@ class Util:
     def home_to_tilde(path: str) -> str:
         """Convert paths starting with user home directory into '~/path'."""
         home = os.path.expanduser(f"~{os.sep}")
-        if f"{path}{os.sep}".startswith(home):
-            path = f"~{os.sep}{path[len(home):]}"
+        path_str = f"{path}{os.sep}"
+        if path_str.startswith(home):
+            return f"~{os.sep}{path_str[len(home):-len(os.sep)]}"
         return path

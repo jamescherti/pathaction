@@ -19,9 +19,9 @@
 """Test the class Util()."""
 
 import os
-from pathlib import Path
 import tempfile
 import unittest.mock
+from pathlib import Path
 
 import pytest
 from pathaction.exceptions import PathActionError
@@ -38,15 +38,15 @@ def test_util_which():
     with pytest.raises(PathActionError):
         Util.which("does_not_exist")
 
-    assert Util.which("/bin/sh") == Path("/bin/sh")
+    assert Util.which("/bin/sh") == "/bin/sh"
 
-    assert Util.which("sh", env_path="/bin") == Path("/bin/sh")
+    assert Util.which("sh", env_path="/bin") == "/bin/sh"
 
     with pytest.raises(PathActionError):
         del os.environ["PATH"]
         Util.which("sh")
 
-    assert Util.which("./sh", cwd="/bin", env_path="") == Path("/bin/sh")
+    assert Util.which("./sh", cwd="/bin", env_path="") == "/bin/sh"
 
     with pytest.raises(PathActionError):
         Path(Util.which("./bin", cwd="/", env_path=""))
@@ -60,7 +60,8 @@ def test_util_which():
     cwd = os.getcwd()
     os.chdir("/bin")
     new_cwd = os.getcwd()
-    assert Util.which("./sh", env_path="") == Path(new_cwd).joinpath("sh")
+    assert \
+        Util.which("./sh", env_path="") == str(os.path.join(new_cwd, "sh"))
     os.chdir(cwd)
 
 
