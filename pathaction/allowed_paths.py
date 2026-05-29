@@ -18,9 +18,11 @@
 #
 """Manage permissions to allow execution only from specific paths."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Set, TextIO, Union
+from typing import TextIO, Union
 
 import yaml
 
@@ -30,8 +32,8 @@ class AllowedPaths:
 
     def __init__(self) -> None:
         """Initialize AllowedPaths class."""
-        self._temporarily_allowed: Set[Path] = set()
-        self._permanently_allowed: Set[Path] = set()
+        self._temporarily_allowed: set[Path] = set()
+        self._permanently_allowed: set[Path] = set()
 
     def reset(self) -> None:
         """Reset the allowed path lists."""
@@ -63,7 +65,7 @@ class AllowedPaths:
         self._permanently_allowed.discard(resolved_path)
         self._temporarily_allowed.discard(resolved_path)
 
-    def get_all(self) -> Set[Path]:
+    def get_all(self) -> set[Path]:
         """Return all permanent and temporary paths."""
         return set(self._temporarily_allowed | self._permanently_allowed)
 
@@ -122,7 +124,7 @@ class AllowedPaths:
                              default_flow_style=False,
                              indent=2))
 
-    def _gen_saveable_data(self) -> Dict[str, List[str]]:
+    def _gen_saveable_data(self) -> dict[str, list[str]]:
         """Generate saveable data dictionary."""
         return {
             "permanently_allowed": [str(path)

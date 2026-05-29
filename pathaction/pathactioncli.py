@@ -18,6 +18,8 @@
 #
 """Represent the command-line interface of pathaction."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess  # nosec B404

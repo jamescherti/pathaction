@@ -18,12 +18,14 @@
 #
 """Provide useful methods that PathAction uses."""
 
+from __future__ import annotations
+
 import os
 import select
 import signal
 import sys
 from collections.abc import Callable
-from typing import Any, List, Union
+from typing import Any, Union
 
 try:
     from colorama import Fore, Style
@@ -170,14 +172,14 @@ class Util:
                 signal.alarm(0)  # cancel the alarm
 
     @staticmethod
-    def file_ends_with(path_prefix: str, path_suffixes: list) -> List[str]:
+    def file_ends_with(path_prefix: str, path_suffixes: list) -> list[str]:
         """Return valid system paths that end with given suffixes.
 
         Args:
             path_prefix: Base path prefix.
             path_suffixes: List of file suffixes to attempt appending.
         """
-        result: List[str] = []
+        result: list[str] = []
         for cur_path_suffix in path_suffixes:
             cur_file = f"{path_prefix}{cur_path_suffix}"
             if os.path.isfile(cur_file) and cur_file not in result:

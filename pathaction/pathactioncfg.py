@@ -18,6 +18,8 @@
 #
 """Load a PathAction configuration file."""
 
+from __future__ import annotations
+
 import mimetypes
 import os
 import pwd
@@ -28,7 +30,7 @@ import subprocess  # nosec B404
 from collections import UserDict
 from copy import copy, deepcopy
 from glob import fnmatch  # type: ignore
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import jinja2
 import schema
@@ -176,7 +178,7 @@ class ActionCommand(UserDict):
 
     def run(self, shell_path: str,
             timeout: float = 0,
-            debug: bool = False) -> Tuple[Union[str, list], int]:
+            debug: bool = False) -> tuple[Union[str, list], int]:
         """Execute a command.
 
         Returns:
@@ -236,7 +238,7 @@ class ActionCommand(UserDict):
                 cmd_path = Util.which(cmd[0], cwd=cwd)
                 cmd[0] = str(cmd_path)
 
-            kwargs: Dict[str, Any] = {}
+            kwargs: dict[str, Any] = {}
             kwargs["cwd"] = cwd
             if timeout > 0.0:
                 kwargs["timeout"] = timeout  # type: ignore
@@ -329,7 +331,7 @@ class PathActionCfg:
 
         # The data
         self.env: dict = {}
-        self.loaded_yaml_path: list = []
+        self.loaded_yaml_path: list[str] = []
         self.cfg: dict = {}
 
         # reset and load all ".pathaction.yaml" files
@@ -489,10 +491,10 @@ class PathActionCfg:
         self.loaded_yaml_path.append(abs_yaml_path)
         return True
 
-    def load_all_cfg(self, limit: int) -> List[str]:
+    def load_all_cfg(self, limit: int) -> list[str]:
         """Find and load all 'pathaction.yaml' files."""
         self.reset()
-        list_cfg_files: List[str] = []
+        list_cfg_files: list[str] = []
 
         #
         # Find cfg files
@@ -626,7 +628,7 @@ class PathActionCfg:
 
         j2_template = env.from_string(string)
 
-        j2_vars: Dict[str, Any] = {}
+        j2_vars: dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
         j2_vars.update(dict(file=source_code,
                             env=self.env,
