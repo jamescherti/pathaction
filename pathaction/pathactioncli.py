@@ -25,6 +25,7 @@ import os
 import subprocess  # nosec B404
 import sys
 import traceback
+from pathlib import Path
 from pprint import pprint
 from typing import Any
 
@@ -56,6 +57,7 @@ class PathActionCli:
             sys.exit(1)
 
     # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
     def __init__(self,
                  require_tty: bool = False,
                  limit_loop: int = -1,
@@ -107,7 +109,12 @@ class PathActionCli:
             sys.exit(0)
 
         if self.args.disallow_dir:
-            target_dir = os.path.abspath(self.args.disallow_dir)
+            target_dir = Path(self.args.disallow_dir).resolve()
+            if target_dir not in allowed_dirs.get_all():
+                print((f"Error: The directory '{target_dir}' is not part "
+                       "of the allowed ones and cannot be disallowed for this "
+                       "reason."))
+                sys.exit(1)
             allowed_dirs.remove(target_dir)
             allowed_dirs.save_to_yaml(CFG_ALLOWED_DIRS)
             print(f"Removed from allowed directories: {target_dir}")
@@ -128,9 +135,8 @@ class PathActionCli:
                 source_code = os.path.abspath(pathaction_cfg.source_code)
 
                 if self.args.allow_dir:
-                    os.makedirs(
-                        os.path.dirname(CFG_ALLOWED_DIRS),
-                        exist_ok=True)
+                    os.makedirs(os.path.dirname(CFG_ALLOWED_DIRS),
+                                exist_ok=True)
                     if not os.path.isdir(source_code):
                         Util.error("The path you provided is not a "
                                    f"directory: {source_code}")
@@ -310,7 +316,8 @@ class PathActionCli:
             "--disallow-dir",
             type=str,
             metavar="DIR",
-            help="Disallow pathaction from being executed in the provided directory."
+            help=("Disallow pathaction from being executed in the "
+                  "provided directory.")
         )
 
         parser.add_argument(
