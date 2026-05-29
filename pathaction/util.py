@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
-"""Useful methods that PathAction uses."""
+"""Provide useful methods that PathAction uses."""
 
 import os
 import select
@@ -24,7 +24,7 @@ import signal
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Union
+from typing import Any, List, Union
 
 try:
     from colorama import Fore, Style
@@ -42,7 +42,7 @@ from .exceptions import PathActionError
 
 
 class Util:
-    """Useful methods."""
+    """Provide helper methods for CLI formatting and execution."""
 
     IS_A_TTY = ((hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()) and
                 (("TERM" not in os.environ) or
@@ -54,7 +54,8 @@ class Util:
     COLOR_QUESTION = Fore.YELLOW
 
     @staticmethod
-    def error(message):
+    def error(message: str) -> None:
+        """Print an error message directly to sys.stderr."""
         print(os.path.basename(sys.argv[0]) + ": Error: " + message,
               file=sys.stderr)
 
@@ -103,7 +104,7 @@ class Util:
 
     @staticmethod
     def color(color: str, string: str = "") -> str:
-        """Return a colored text."""
+        """Return text formatted with colorama styles."""
         color_reset: Union[int, str] = Style.RESET_ALL
         if not Util.IS_A_TTY:
             color = ""
@@ -112,8 +113,8 @@ class Util:
 
     @staticmethod
     def pcolor(color: str, string: str = "", prefix: str = "",
-               file=sys.stderr, **kwargs) -> str:
-        """Print a colored text."""
+               file: Any = sys.stderr, **kwargs: Any) -> str:
+        """Print a colored string with an optional prefix."""
         colored_text = Util.color(color, string)
         prefix = Util.color(Util.COLOR_HIGHLIGHT, prefix)
         result = f"{prefix}{colored_text}"
@@ -126,7 +127,7 @@ class Util:
                      timeout: int = 0,
                      hook_invalid_entry: Callable = lambda _: None,
                      empty_stdin: bool = True) -> str:
-        """Ask a question."""
+        """Prompt a question and wait for specific answers."""
         # Empty stdin
         if empty_stdin:
             while sys.stdin in select.select([sys.stdin],  # pragma: no cover
@@ -139,7 +140,7 @@ class Util:
 
         if timeout > 0:
             def alarm_handler(*args):
-                """SIGALRM handler."""
+                """Handle the SIGALRM signal."""
                 raise TimeoutError  # pragma: no cover
 
             signal.signal(signal.SIGALRM, alarm_handler)
@@ -168,12 +169,12 @@ class Util:
                 signal.alarm(0)  # cancel the alarm
 
     @staticmethod
-    def file_ends_with(path_prefix: str, path_suffixes: list) -> list:
-        """Return paths that that exist and end with path_suffixes.
+    def file_ends_with(path_prefix: str, path_suffixes: list) -> List[str]:
+        """Return valid system paths that end with given suffixes.
 
-        :path_prefix: path to the file.
-        :path_suffixes: list of suffixes (e.g. extensions).
-
+        Args:
+            path_prefix: Base path prefix.
+            path_suffixes: List of file suffixes to attempt appending.
         """
         result: list = []
         for cur_path_suffix in path_suffixes:
@@ -184,9 +185,9 @@ class Util:
 
     @staticmethod
     def read_shebang(path: str) -> str:
-        """Return the shebang of the source code.
+        """Return the shebang string of the parsed source code.
 
-        None is returned if the shebang cannot be found.
+        Raises PathActionError if the shebang cannot be found.
         """
         if os.path.isfile(path):
             with open(path, "rb") as fhandler:
@@ -198,7 +199,7 @@ class Util:
 
     @staticmethod
     def home_to_tilde(path: str) -> str:
-        """Convert paths that start with '/home/*' to '~/*'."""
+        """Convert paths starting with user home directory into '~/path'."""
         home = os.path.expanduser(f"~{os.sep}")
         if f"{path}{os.sep}".startswith(home):
             path = f"~{os.sep}{path[len(home):]}"
