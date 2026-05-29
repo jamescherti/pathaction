@@ -20,50 +20,55 @@
 
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, TextIO, Union
 
 import yaml
 
 
 class AllowedPaths:
-    def __init__(self):
+    """Manage allowed execution paths."""
+
+    def __init__(self) -> None:
+        """Initialize AllowedPaths class."""
+        self._temporarily_allowed: Set[Path] = set()
+        self._permanently_allowed: Set[Path] = set()
+
+    def reset(self) -> None:
+        """Reset the allowed path lists."""
         self._temporarily_allowed = set()
         self._permanently_allowed = set()
 
-    def reset(self):
-        self._temporarily_allowed = set()
-        self._permanently_allowed = set()
-
-    def add(self, path: Union[str, Path], permanent: bool):
+    def add(self, path: Union[str, Path], permanent: bool) -> None:
         """Add a path to the list of allowed paths.
 
         Args:
             path: The path to be added.
             permanent: True to add the path permanently.
         """
-        path = Path(path).resolve()
+        resolved_path = Path(path).resolve()
         if permanent:
-            self._permanently_allowed.add(path)
-            self._temporarily_allowed.discard(path)
+            self._permanently_allowed.add(resolved_path)
+            self._temporarily_allowed.discard(resolved_path)
         else:
-            self._temporarily_allowed.add(path)
-            self._permanently_allowed.discard(path)
+            self._temporarily_allowed.add(resolved_path)
+            self._permanently_allowed.discard(resolved_path)
 
-    def remove(self, path: Union[str, Path]):
+    def remove(self, path: Union[str, Path]) -> None:
         """Remove a path from the list of allowed paths.
 
         Args:
             path: The path to be removed.
         """
-        path = Path(path).resolve()
-        self._permanently_allowed.discard(path)
-        self._temporarily_allowed.discard(path)
+        resolved_path = Path(path).resolve()
+        self._permanently_allowed.discard(resolved_path)
+        self._temporarily_allowed.discard(resolved_path)
 
     def get_all(self) -> Set[Path]:
-        """Return all paths (permanent and temporary)"""
+        """Return all permanent and temporary paths."""
         return set(self._temporarily_allowed | self._permanently_allowed)
 
     def __iter__(self):
+        """Iterate over all allowed paths."""
         return iter(self.get_all())
 
     def is_allowed(self, path: Union[str, Path]) -> bool:
@@ -72,28 +77,29 @@ class AllowedPaths:
         Args:
             path: The path to be checked.
 
-        Returns: True if the path is allowed, False otherwise.
+        Returns:
+            True if the path is allowed, False otherwise.
         """
         rpath = Path(path).resolve()
         return any(rpath.is_relative_to(allowed_path)  # type: ignore
                    for allowed_path in self)
 
-    def load_from_yaml(self, path: Union[str, Path]):
+    def load_from_yaml(self, path: Union[str, Path]) -> None:
         """Load the list of allowed paths from a YAML file.
 
         Args:
             path: The path to the YAML file containing allowed paths.
         """
-        with open(path, "r", encoding="utf-8") as fhandler:
+        with open(Path(path), "r", encoding="utf-8") as fhandler:
             self.load_yaml_from_string(fhandler)
 
-    def load_yaml_from_string(self, stream):
+    def load_yaml_from_string(self, stream: TextIO) -> None:
         """Load from a string that contains YAML data."""
         content = yaml.safe_load(stream)
         self._permanently_allowed = \
             set(map(Path, content["permanently_allowed"]))
 
-    def save_to_yaml(self, path: Union[str, Path]):
+    def save_to_yaml(self, path: Union[str, Path]) -> None:
         """Save the list of allowed paths to a YAML file.
 
         Args:
@@ -103,17 +109,21 @@ class AllowedPaths:
         with open(file_path, "w", encoding="utf-8") as fhandler:
             yaml.dump(self._gen_saveable_data(),
                       fhandler,
-                      default_flow_style=False)
+                      default_flow_style=False,
+                      indent=2)
 
     def dump_to_yaml(self) -> str:
         """Dump the list of allowed paths to a YAML string.
 
-        Returns: The YAML representation of allowed paths.
+        Returns:
+            The YAML representation of allowed paths.
         """
         return str(yaml.dump(self._gen_saveable_data(),
-                             default_flow_style=False))
+                             default_flow_style=False,
+                             indent=2))
 
     def _gen_saveable_data(self) -> Dict[str, List[str]]:
+        """Generate saveable data dictionary."""
         return {
             "permanently_allowed": [str(path)
                                     for path in self._permanently_allowed],
@@ -122,7 +132,8 @@ class AllowedPaths:
     def __repr__(self) -> str:
         """Provide a string representation of the object.
 
-        Returns: str: A string representation of the object.
+        Returns:
+            A string representation of the object.
         """
         return (
             "Temporary:\n"

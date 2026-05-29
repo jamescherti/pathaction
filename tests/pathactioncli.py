@@ -74,8 +74,8 @@ def test_pathactioncli_error_between_2_success(allowed_dirs: AllowedPaths):
         with pytest.raises(SystemExit) as exitinfo:
             # Test success
             pathactioncli = PathActionCli(limit_loop=1,
-                                            limit_load_cfg=1,
-                                            allowed_dirs=allowed_dirs)
+                                          limit_load_cfg=1,
+                                          allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == 111
 
