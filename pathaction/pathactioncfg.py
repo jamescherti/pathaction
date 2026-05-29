@@ -176,6 +176,8 @@ class ActionCommand(UserDict):
         """Retrieve attribute."""
         return self[key]
 
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
     def run(self, shell_path: str,
             timeout: float = 0,
             debug: bool = False) -> tuple[Union[str, list], int]:
@@ -254,8 +256,10 @@ class ActionCommand(UserDict):
                     stderr_path = self["stderr"]
 
                 if (stdout_path and stderr_path and
-                        ((os.path.exists(stdout_path) and os.path.samefile(stdout_path, stderr_path)) or
-                         (os.path.abspath(stdout_path) == os.path.abspath(stderr_path)))):
+                        ((os.path.exists(stdout_path) and
+                          os.path.samefile(stdout_path, stderr_path)) or
+                         (os.path.abspath(stdout_path) ==
+                          os.path.abspath(stderr_path)))):
                     kwargs["stdout"] = open(self["stdout"], "wb")
                     kwargs["stderr"] = kwargs["stdout"]
                     stdout_path = None
@@ -630,6 +634,7 @@ class PathActionCfg:
 
         j2_vars: dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
+        # pylint: disable=use-dict-literal
         j2_vars.update(dict(file=source_code,
                             env=self.env,
                             cwd=cwd,
