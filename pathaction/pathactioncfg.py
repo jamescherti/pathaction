@@ -243,26 +243,27 @@ class ActionCommand(UserDict):
                 kwargs["timeout"] = timeout  # type: ignore
 
             try:
-                stdout = None
-                stderr = None
+                stdout_path: Optional[str] = None
+                stderr_path: Optional[str] = None
+
                 if "stdout" in self and self["stdout"]:
-                    stdout = Path(self["stdout"])
+                    stdout_path = self["stdout"]
 
                 if "stderr" in self and self["stderr"]:
-                    stderr = Path(self["stderr"])
+                    stderr_path = self["stderr"]
 
-                if (stdout and stderr and
-                        ((stdout.exists() and stdout.samefile(stderr)) or
-                         (stdout.resolve() == stderr.resolve()))):
+                if (stdout_path and stderr_path and
+                        ((os.path.exists(stdout_path) and os.path.samefile(stdout_path, stderr_path)) or
+                         (os.path.abspath(stdout_path) == os.path.abspath(stderr_path)))):
                     kwargs["stdout"] = open(self["stdout"], "wb")
                     kwargs["stderr"] = kwargs["stdout"]
-                    stdout = None
-                    stderr = None
+                    stdout_path = None
+                    stderr_path = None
 
-                if stdout:
+                if stdout_path:
                     kwargs["stdout"] = open(self["stdout"], "wb")
 
-                if stderr:
+                if stderr_path:
                     kwargs["stderr"] = open(self["stderr"], "wb")
 
                 if shell:
@@ -324,10 +325,6 @@ class PathActionCfg:
             PathActionCfg.schema_pathaction_cfg
         )
 
-        # if not os.path.exists(source_code):
-        #     err_str = f"'{source_code}' does not exist."
-        #     raise PathActionError(err_str)
-
         # Init vars
         self.source_code: str = os.path.normpath(source_code)
 
@@ -359,7 +356,7 @@ class PathActionCfg:
 
         pathaction_path = os.path.dirname(action_cmd.path_cfg)
         return str(os.path.abspath(
-            os.path.join(pathaction_path, action_cmd["cwd"])
+            os.path.join(pathaction_path, str(cwd))
         ))
 
     def find_command(self, action_name: str) -> Union[ActionCommand, None]:
