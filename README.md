@@ -43,14 +43,6 @@ actions:
 
 There are many ways to match paths, including using regular expressions and MIME types. See below for more details.
 
-## Requirements
-
-Python requirements:
-
-- jinja2
-- schema
-- PyYAML
-
 ## Editor Plugins
 
 - **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
@@ -65,6 +57,12 @@ pip install --user pathaction
 ```
 
 The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
+
+Python requirements:
+
+- jinja2
+- schema
+- PyYAML
 
 ## Optional Dependencies
 
