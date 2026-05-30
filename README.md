@@ -58,11 +58,7 @@ pip install --user pathaction
 
 The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
 
-Python requirements:
-
-- jinja2
-- schema
-- PyYAML
+(Python requirements: jinja2, schema, PyYAML.)
 
 ## Optional Dependencies
 
