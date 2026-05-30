@@ -40,7 +40,6 @@ setup(
         "jinja2",
         "schema",
         "PyYAML",
-        # "setproctitle",  # optional
     ],
     extras_require={
         "colors": ["colorama"],

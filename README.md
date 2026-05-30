@@ -1,11 +1,11 @@
 # Pathaction | A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The `pathaction` tool is a flexible command-line utility for running commands on files and directories. Just pass a file path as an argument, and it handles the rest, whether you're working with code, media, or configurations.
+The `pathaction` tool is a flexible command-line utility for running commands on files and directories. Pass a file path as an argument, and the tool handles the rest, whether you are working with code, media, or configurations.
 
-Think of `pathaction` like a Makefile for any file or directory in the filesystem. It uses a `.pathaction.yaml` file to figure out which command to run, and you can even use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type, like setting up one tag to run a script, and another to debug it.
+Think of `pathaction` like a Makefile for any file or directory in the filesystem. It uses a `.pathaction.yaml` file to determine which command to run, and you can use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type. For example, you can set up one tag to run a script, another to debug it, and a third to run a linter.
 
-This tool is for software developers who manage multiple projects across diverse ecosystems and want to eliminate the cognitive load of switching between different build tools, environment configurations, and deployment methods. Just run one single command on any file and trust that it gets handled correctly.
+This tool is built for software engineers who manage multiple projects across diverse environments. It eliminates the cognitive load of switching between different build tools, environment configurations, and deployment methods. Run a single unified command on any file and trust that it gets handled correctly.
 
 If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** to help more software developers discover its benefits.
 
@@ -41,7 +41,7 @@ actions:
     command: "gimp {{ file|quote }}"
 ```
 
-There are many ways to match paths, including using regex. See below for more details.
+There are many ways to match paths, including using regular expressions and MIME types. See below for more details.
 
 ## Requirements
 
@@ -60,7 +60,7 @@ Python requirements:
 ## Installation
 
 Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
-```
+```sh
 sudo pip install --user pathaction
 ```
 
@@ -88,179 +88,203 @@ To install both extras at once, use a comma-separated list:
 pip install "pathaction[colors,proctitle]"
 ```
 
-## Usage
+## Getting Started
 
-### Allow a directory
+### 1. Authorize your working directory
 
-By default, `pathaction` does not read rule-set files such as `.pathaction.yaml` from arbitrary directories. The allowed directories must be explicitly permitted.
+By default, `pathaction` does not read rule-set files from arbitrary directories for security reasons. The allowed directories must be explicitly permitted. To allow `pathaction` to load rules from your projects folder and its subdirectories, run:
 
-To allow `pathaction` to load `.pathaction.yaml` rules from a directory and its subdirectories, run the following command:
-
-```
+```sh
 pathaction --allow-dir ~/projects
 ```
 
-To view a list of all directories that are currently permitted permanently, use the `--list-allowed-dirs` flag:
+### 2. Create a rule-set file
 
-```
-pathaction --list-allowed-dirs
-```
-
-To revoke access and remove a specific directory from your allowed list, use the `--disallow-dir` flag:
-
-```
-pathaction --disallow-dir ~/projects
-```
-
-Note: You do not need to provide a file path argument when using the `--list-allowed-dirs` or `--disallow-dir` flags.
-
-### Rule-set files: `.pathaction.yaml`
-
-The `pathaction` command-line tool uses regular expressions or filename pattern matching found in the rule-set file named `.pathaction.yaml` to associate commands with file types.
-
-For instance, consider the following command:
-```
-pathaction -t main ~/projects/project-name/sub-project/file.py
-```
-
-The command above will load the `.pathaction.yaml` file not only from the directory where `file.py` is located but also from its parent directories. This loading behavior is similar to that of a `.gitignore` file. The rule sets from all these `.pathaction.yaml` files are combined. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file or directory passed as a parameter to the `pathaction` command.
-
-Jinja2 templating can be used to dynamically replace parts of the commands defined in the rule-set file with information about the file being executed, such as its filename and path, among other details (more on this below). In the command `"python {{ file|quote }}"`, the placeholder `{{ file|quote }}` will be dynamically substituted with the path to the source code passed as a parameter to the `pathaction` command-line tool.
-
-Each rule defined in the rule set file `.pathaction.yaml` must include at least:
-
-* The matching rule (e.g., a file name pattern like `*.py` or a regex `.*py$`).
-* The command or a shell command (the command and its arguments can be templated with Jinja2).
-
-### Example 1
-
-This is what the rule-set file `.pathaction.yaml` contains:
+Navigate to your project root (e.g., `~/projects/my-app/`) and create a `.pathaction.yaml` file. Here is a basic example to run Python files:
 
 ```yaml
 ---
 actions:
-  # *.py files
+  - path_match: "*.py"
+    tags: main
+    command:
+      - "python"
+      - "{{ file }}"
+```
+
+### 3. Execute the file
+
+Now, instead of manually invoking the Python interpreter, you can pass the file directly to `pathaction`. It will read the rule, match the `.py` extension, and execute the command.
+
+```sh
+pathaction src/main.py
+
+```
+
+Because the default tag is `main`, `pathaction` automatically targets the block we just defined.
+
+## Comprehensive Examples
+
+The real value of `pathaction` comes from defining complex, multi-tag workflows across different file types. Here are detailed examples of how to configure `.pathaction.yaml` for various scenarios.
+
+### Example 1: Full Python and Bash Workflow
+
+Instead of memorizing different tools and their command-line arguments, you can define them as actions.
+
+```yaml
+---
+actions:
+  # Execute the Python script
   - path_match: "*.py"
     tags: main
     command:
       - "python"
       - "{{ file }}"
 
-  # *.sh files
+  # Run tests
+  - path_match: "*.py"
+    tags: test
+    command: "pytest -v {{ file|quote }}"
+
+  # Type checking
+  - path_match: "*.py"
+    tags: typecheck
+    command: "mypy {{ file|quote }}"
+
+  # Execute Bash shell scripts
   - path_match: "*.sh"
     tags:
       - main
     command: "bash {{ file|quote }}"
-
-  - path_match: "*.sh"
-    tags: install
-    command: "cp {{ file|quote }} ~/.local/bin/"
 ```
 
-Consider the following command:
+You can invoke these specific actions by passing the `-t` (tag) flag:
 
 ```sh
-pathaction source_code.py
+pathaction -t typecheck src/utils.py
+pathaction -t test src/test_utils.py
+
 ```
 
-The command above will:
+### Example 2: Managing Infrastructure with Ansible
 
-1. Load the `source_code.py` file.
-2. Attempt to locate `.pathaction.yaml` or `.pathaction.yml` in the directory where the source code is located or in its parent directories. The search for `.pathaction.yaml` follows the same approach as `git` uses to find `.gitignore` in the current and parent directories.
-3. Execute the command defined in `.pathaction.yaml` (e.g., pathaction will execute the command `python {{ file }}` on all `*.py` files).
-
-### Example 2
-
-Here is another example of a rule-set file located at `~/.pathaction.yaml`:
+You can set up rules to apply Ansible playbooks directly.
 
 ```yaml
 ---
-
-options:
-  shell: /bin/bash
-  verbose: false
-  debug: false
-  confirm_after_timeout: 120
-  timeout: 3600
-  # debug: false
-  # verbose: true
-
-vars:
-  variable_name: "variable"
-
 actions:
-  # A shell is used to run the following command:
-  - path_match: "*.sh"
-    path_match_exclude: "*/not_this_one.sh"    # optional
-    tags:
-      - main
-    shell: true
-    command: "bash {{ file|quote }}"
-
-  # The command is executed without a shell when shell=false
-  - path_regex: '^.*ends_with_string$'
-    regex_path_exclude: '^.*not_this_one$'  # optional
+  - path_match: "*playbook.yml"
     tags: main
-    cwd: "{{ file|dirname }}"               # optional
-    shell: false                            # optional
-    command:
-      - "python"
-      - "{{ file }}"
+    command: "ansible-playbook -i inventory.ini {{ file|quote }}"
 
-  # Mime types
-  - mimetype: "text/x-python"
-    tags: main
-    shell: true
-    list_commands:
-      - "echo python mime type"
-
-  - mimetype_regex: "^app.*/x-sh$"
-    tags: main
-    shell: true
-    list_commands:
-      - "echo sh file. varible_name={{ variable_name }} "
 ```
+
+### Example 3: C/C++ Compilation and Execution
+
+You can use `pathaction` to compile files on the fly and put the output binary in the correct directory.
+
+```yaml
+---
+actions:
+  # Compile C++ source code
+  - path_match: "*.cpp"
+    tags: build
+    cwd: "{{ file|dirname }}"
+    command: "g++ -Wall -O2 {{ file|quote }} -o {{ file|basename|replace('.cpp', '') }}"
+
+  # Run the compiled binary
+  - path_match: "*.cpp"
+    tags: run
+    cwd: "{{ file|dirname }}"
+    command: "./{{ file|basename|replace('.cpp', '') }}"
+
+```
+
+## Command-Line Arguments
+
+The `pathaction` utility accepts several arguments to control execution behavior:
+
+* `-t`, `--tag`: Execute the action associated with this tag (default is `main`).
+* `-b`, `--confirm-before`: Prompt for confirmation before executing the defined action.
+* `-a`, `--confirm-after`: Ask the user if they want to execute the action again after it finishes (respects the `confirm_after_timeout` configuration).
+* `-l`, `--list`: List all the `.pathaction.yaml` configuration files that apply to the given file path. Useful for debugging rule resolution.
+* `-d`, `--allow-dir`: Permanently allow `pathaction` to execute rules from the provided directory and its subdirectories.
+* `--disallow-dir`: Revoke access and remove a specific directory from your allowed list.
+* `--list-allowed-dirs`: Print a list of all permanently allowed directories.
+
+## Configuration Guide (`.pathaction.yaml`)
+
+The rule-sets cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
+
+Each rule defined in the rule-set file must include at least the matching rule and the command.
+
+### Match Methods
+
+You can target files using various matching strategies. Every match method also has a corresponding `_exclude` variant (e.g., `path_match_exclude`) to explicitly ignore files that would otherwise match.
+
+* **`path_match`**: Standard glob pattern matching (e.g., `*.py`).
+* **`path_match_case`**: Case-sensitive glob pattern matching.
+* **`path_regex`**: Regular expression path matching (case-insensitive by default).
+* **`path_regex_case`**: Case-sensitive regular expression matching.
+* **`mimetype`**: Strict MIME type matching (e.g., `text/x-python`).
+* **`mimetype_match`**: Glob pattern matching for MIME types (e.g., `text/*`).
+* **`mimetype_regex`**: Regular expression matching for MIME types.
+
+### Action Configuration
+
+An action block can include the following optional attributes:
+
+* **`tags`**: A string or list of strings indicating the tag names.
+* **`comment`**: An informative string describing what the action does.
+* **`timeout`**: An integer specifying the maximum execution time in seconds.
+* **`cwd`**: The current working directory for the command.
+* **`stdout`**: Redirect the standard output of the command to the specified file path.
+* **`stderr`**: Redirect the standard error of the command to the specified file path. (If both `stdout` and `stderr` point to the exact same file path, they are combined).
+* **`shell`**: Boolean indicating if the command should be executed within a shell environment.
+* **`command`** / **`list_commands`**: The command string/array to execute. These two are mutually exclusive.
+
+### Global Options
+
+You can define an `options` block at the root of your `.pathaction.yaml` to specify execution defaults:
+
+* **`shell_path`**: The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell).
+* **`verbose`**: Enable verbose logging.
+* **`debug`**: Enable debug mode.
+* **`timeout`**: A global timeout constraint in seconds.
+* **`confirm_after_timeout`**: The timeout in seconds when waiting for user input during a `--confirm-after` prompt.
+* **`last`**: If set to `true`, `pathaction` stops loading configurations from higher parent directories.
 
 ## Jinja2 Variables and Filters
 
 ### Jinja2 Variables
 
-| Variable       | Description
-|----------------|---------------------------------------------------
-| {{ file }}     | Replaced with the full path to the source code.
-| {{ cwd }}      | Refers to the current working directory.
-| {{ env }}      | Represents the operating system environment variables (dict).
-| {{ pathsep }}  | Denotes the path separator
+| Variable | Description |
+| --- | --- |
+| `{{ file }}` | Replaced with the full absolute path to the targeted file. |
+| `{{ cwd }}` | Refers to the current working directory of the matched action. |
+| `{{ env }}` | Represents the operating system environment variables (dictionary). |
+| `{{ pathsep }}` | Denotes the path separator (e.g., `/` on Linux, `\` on Windows). |
 
 ### Jinja2 Filters
 
-- **`quote`**: Escapes a string for use as a shell argument by wrapping it in single quotes and escaping internal single quotes. This prevents shell injection vulnerabilities when executing paths that contain spaces or punctuation. *Example:* `"/home/user/my file.txt" | quote` evaluates to `'/home/user/my file.txt'`
-
-- **`basename`**: Extracts the trailing filename or leaf component of a filesystem path. *Example:* `"/home/user/src/main.py" | basename` evaluates to `"main.py"`.
-
-- **`dirname`**: Returns the parent directory portion of a filesystem path. *Example:* `"/home/user/src/main.py" | dirname` evaluates to `"/home/user/src"`.
-
-- **`realpath`**: Resolves all symbolic links, relative segments (like `..`), and duplicate separators to return the canonical absolute path. *Example:* `"/usr/bin/../local/bin/python" | realpath` evaluates to `"/usr/local/bin/python"`.
-
-- **`abspath`**: Converts a relative path into an absolute path by prefixing it with the current working directory, without expanding symbolic links. *Example:* `"src/main.py" | abspath` evaluates to `"/home/user/project/src/main.py"`.
-
-- **`joinpath`**: Combines one or more path segments using the system filesystem separator. *Example:* `"/var/log" | joinpath("nginx", "error.log")` evaluates to `"/var/log/nginx/error.log"`.
-
-- **`joincmd`**: Converts an array of command-line tokens into a single properly escaped shell command string. *Example:* `["grep", "-i", "error log"] | joincmd` evaluates to `'grep -i "error log"'`.
-
-- **`splitcmd`**: Parses a raw shell command string into an array of distinct arguments while honoring quotation rules and escape sequences. *Example:* `"git commit -m 'initial release'" | splitcmd` evaluates to `["git", "commit", "-m", "initial release"]`.
-
-- **`expanduser`**: Replaces a leading tilde notation (`~` or `~user`) with the absolute path of the corresponding user home directory. *Example:* `"~/config/tmux.conf" | expanduser` evaluates to `"/home/user/config/tmux.conf"`.
-
-- **`expandvars`**: Substitutes environment variables within a string matching `$VARIABLE` or `${VARIABLE}` with their current active system values. *Example:* `"$HOME/.config" | expandvars` evaluates to `"/home/user/.config"`.
-
-- **`shebang`**: Inspects a file and extracts the first line directly if it begins with an executable script prefix (`#!`). *Example:* `"/home/user/script.sh" | shebang` evaluates to `"#!/usr/bin/env bash"`.
-
-- **`shebang_list`**: Extracts the shebang line from a file, discards the initial `#!` marker, and parses the remaining contents into a clean token array. *Example:* `"/home/user/script.sh" | shebang_list` evaluates to `["/usr/bin/env", "bash"]`.
-
-- **`shebang_quote`**: Extracts the shebang line from a file, strips the `#!` marker, and returns the runtime interpreter directive as a safely balanced, shell-quoted string. *Example:* `"/home/user/script.sh" | shebang_quote` evaluates to `"/usr/bin/env bash"`.
-
-- **`which`**: Searches the system environment variable `PATH` to locate the absolute path of an executable binary. Raises an error if the binary cannot be found. *Example:* `"emacs" | which` evaluates to `"/usr/bin/emacs"`.
+* **`quote`**: Escapes a string for use as a shell argument by wrapping it in single quotes and escaping internal single quotes. This prevents shell injection vulnerabilities. *Example:* `"/home/user/my file.txt" | quote` evaluates to `'/home/user/my file.txt'`.
+* **`basename`**: Extracts the trailing filename or leaf component of a filesystem path. *Example:* `"/home/user/src/main.py" | basename` evaluates to `"main.py"`.
+* **`dirname`**: Returns the parent directory portion of a filesystem path. *Example:* `"/home/user/src/main.py" | dirname` evaluates to `"/home/user/src"`.
+* **`file_only_dirname`**: Returns the parent directory if the path is a file, or returns the path itself if it is already a directory.
+* **`realpath`**: Resolves all symbolic links, relative segments (like `..`), and duplicate separators to return the canonical absolute path. *Example:* `"/usr/bin/../local/bin/python" | realpath` evaluates to `"/usr/local/bin/python"`.
+* **`abspath`**: Converts a relative path into an absolute path by prefixing it with the current working directory. *Example:* `"src/main.py" | abspath` evaluates to `"/home/user/project/src/main.py"`.
+* **`relpath`**: Computes the relative path between two directories.
+* **`joinpath`**: Combines one or more path segments using the system filesystem separator. *Example:* `"/var/log" | joinpath("nginx", "error.log")` evaluates to `"/var/log/nginx/error.log"`.
+* **`joincmd`**: Converts an array of command-line tokens into a single properly escaped shell command string. *Example:* `["grep", "-i", "error log"] | joincmd` evaluates to `'grep -i "error log"'`.
+* **`splitcmd`**: Parses a raw shell command string into an array of distinct arguments while honoring quotation rules and escape sequences. *Example:* `"git commit -m 'initial release'" | splitcmd` evaluates to `["git", "commit", "-m", "initial release"]`.
+* **`expanduser`**: Replaces a leading tilde notation (`~` or `~user`) with the absolute path of the corresponding user home directory. *Example:* `"~/config/tmux.conf" | expanduser` evaluates to `"/home/user/config/tmux.conf"`.
+* **`expandvars`**: Substitutes environment variables within a string matching `$VARIABLE` or `${VARIABLE}` with their current active system values. *Example:* `"$HOME/.config" | expandvars` evaluates to `"/home/user/.config"`.
+* **`shebang`**: Inspects a file and extracts the first line directly if it begins with an executable script prefix (`#!`). *Example:* `"/home/user/script.sh" | shebang` evaluates to `"#!/usr/bin/env bash"`.
+* **`shebang_list`**: Extracts the shebang line from a file, discards the initial `#!` marker, and parses the remaining contents into a clean token array. *Example:* `"/home/user/script.sh" | shebang_list` evaluates to `["/usr/bin/env", "bash"]`.
+* **`shebang_quote`**: Extracts the shebang line from a file, strips the `#!` marker, and returns the runtime interpreter directive as a safely balanced, shell-quoted string. *Example:* `"/home/user/script.sh" | shebang_quote` evaluates to `"/usr/bin/env bash"`.
+* **`which`**: Searches the system environment variable `PATH` to locate the absolute path of an executable binary. Raises an error if the binary cannot be found. *Example:* `"emacs" | which` evaluates to `"/usr/bin/emacs"`.
+* **`startswith`**: Evaluates to true if the string starts with the given prefix.
+* **`endswith`**: Evaluates to true if the string ends with the given suffix.
 
 ## Frequently Asked Questions
 
@@ -280,11 +304,7 @@ For example, a Python script in `~/project_a` can be routed to a local virtual e
 
 ### What is the difference between Pathaction and a command such as `find | xargs`?
 
-It is very different from `find | xargs`.
-
-The pathaction tool functions like a customizable, developer-focused xdg-open. It acts as the intelligent router that receives each file path and automatically determines the correct command to execute based on your defined rules.
-
-Just as xdg-open relies on rigid system MIME types to launch GUI applications, Pathaction uses your hierarchical `.pathaction.yaml` configurations and Jinja2 templating to dynamically run commands.
+It is very different from `find | xargs`. The pathaction tool functions like a customizable, developer-focused xdg-open. It acts as the intelligent router that receives each file path and automatically determines the correct command to execute based on your defined rules. Just as xdg-open relies on rigid system MIME types to launch GUI applications, Pathaction uses your hierarchical `.pathaction.yaml` configurations and Jinja2 templating to dynamically run commands.
 
 ### How is pathaction different from a shebang?
 
@@ -300,9 +320,9 @@ In addition to that, Pathaction uses Jinja2 templating, allowing you to dynamica
 
 ### How does the author use pathaction?
 
-The author's `.pathaction.yaml` rules function as a universal bridge across distinct software ecosystems.
+The author's `.pathaction.yaml` rules function as a universal bridge across distinct software environments.
 
-* For Python, C, C++, and related languages, rules are defined to install dependencies, build projects, execute binaries, run test suites, and launch debuggers.
+* For Python, Bash, C, C++, and related languages, rules are defined to install dependencies, build projects, execute binaries, run test suites, and launch debuggers.
 * For Ansible, rules automatically upload playbooks to remote servers, execute them, and validate their results.
 * For Emacs, rules integrate file-based actions directly with editor workflows, enabling evaluation, compilation, or linting based on context.
 * For Vim, rules provide similar editor integration, allowing files to trigger build, run, or formatting actions without manual command construction.
