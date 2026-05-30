@@ -61,7 +61,7 @@ Python requirements:
 
 Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
 ```sh
-sudo pip install --user pathaction
+pip install --user pathaction
 ```
 
 The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
