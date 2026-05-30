@@ -12,12 +12,13 @@ If this tool helps your workflow, please show your support by **⭐ starring pat
 ### Example
 
 You can execute a file with the following commands:
-```
+```sh
 pathaction -t main file.py
 ```
 
 Or:
-```
+
+```sh
 pathaction -t edit another-file.jpg
 ```
 
@@ -52,6 +53,7 @@ There are many ways to match paths, including using regular expressions and MIME
 ## Installation
 
 Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
+
 ```sh
 pip install --user pathaction
 ```
@@ -309,7 +311,7 @@ It is very different from `find | xargs`. The pathaction tool functions like a c
 
 Shebangs are fine for basic execution, but they have limitations that Pathaction was built to address.
 
-A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With pathaction, you can use tags. Passing `pathaction -t run file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
+A shebang only defines how to execute a script. It cannot tell your system how to lint, format, debug, or test files. With pathaction, you can use tags. Passing `pathaction -t main file.py` executes it, while passing `pathaction -t test file.py` can run it through pytest.
 
 ### How is pathaction different from xdg-open?
 
@@ -338,7 +340,7 @@ This program is free software: you can redistribute it and/or modify it under th
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program. If not, see [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
 
 ## Links
 
