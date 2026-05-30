@@ -111,7 +111,7 @@ actions:
 Now, instead of manually invoking the Python interpreter, you can pass the file directly to `pathaction`. It will read the rule, match the `.py` extension, and execute the command.
 
 ```sh
-pathaction ~/projects/my-app/file.py
+pathaction ~/projects/my-app/src/file.py
 ```
 
 Because the default tag is `main`, `pathaction` automatically targets the block we just defined.
