@@ -94,7 +94,7 @@ pathaction --allow-dir ~/projects
 
 ### 2. Create a rule-set file
 
-Navigate to your project root (e.g., `~/projects/my-app/`) and create a `.pathaction.yaml` file. Here is a basic example to run Python files:
+Navigate to your project root and create a `.pathaction.yaml` file (e.g., `~/projects/my-app/.pathaction.yaml`). Here is a basic example to run Python files:
 
 ```yaml
 ---
@@ -111,8 +111,7 @@ actions:
 Now, instead of manually invoking the Python interpreter, you can pass the file directly to `pathaction`. It will read the rule, match the `.py` extension, and execute the command.
 
 ```sh
-pathaction src/main.py
-
+pathaction ~/projects/my-app/file.py
 ```
 
 Because the default tag is `main`, `pathaction` automatically targets the block we just defined.
