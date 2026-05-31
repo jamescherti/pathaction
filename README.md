@@ -7,7 +7,7 @@ Think of `pathaction` like a Makefile for any file or directory in the filesyste
 
 This tool is built for software engineers who manage multiple projects across diverse environments. It eliminates the cognitive load of switching between different build tools, environment configurations, and deployment methods. Run a single unified command on any file and trust that it gets handled correctly.
 
-If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** to help more software developers discover its benefits.
+If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.
 
 ### Example
 
