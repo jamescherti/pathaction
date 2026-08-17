@@ -213,7 +213,7 @@ The `pathaction` utility accepts several arguments to control execution behavior
 * `--disallow-dir`: Revoke access and remove a specific directory from your allowed list.
 * `--list-allowed-dirs`: Print a list of all permanently allowed directories.
 
-## Configuration Guide (`.pathaction.yaml`)
+## Configuration Guide (.pathaction.yaml)
 
 The rule-sets cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
 
