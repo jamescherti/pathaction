@@ -1,7 +1,7 @@
 # Pathaction | A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The `pathaction` tool is a flexible command-line utility for running commands on files and directories. Pass a file path as an argument, and the tool handles the rest, whether you are working with code, media, or configurations.
+The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a flexible command-line utility for running commands on files and directories. Pass a file path as an argument, and the tool handles the rest, whether you are working with code, media, or configurations.
 
 Think of `pathaction` like a Makefile for any file or directory in the filesystem. It uses a `.pathaction.yaml` file to determine which command to run, and you can use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type. For example, you can set up one tag to run a script, another to debug it, and a third to run a linter.
 
@@ -66,17 +66,17 @@ The pip command above will install the `pathaction` executable in the directory 
 
 The `pathaction` CLI offers optional dependencies that extend its functionality. These extras can be installed according to environment requirements.
 
-* **Colored Terminal Output (`colors`)**: Installs `colorama` to provide consistent cross-platform ANSI color support. This enhances the readability of standard output and error messages.
+**Colored Terminal Output (`colors`)**: Installs `colorama` to provide consistent cross-platform ANSI color support. This enhances the readability of standard output and error messages.
 
-  ```bash
-  pip install "pathaction[colors]"
-  ```
+```bash
+pip install "pathaction[colors]"
+```
 
-* **Custom Process Title (`proctitle`)**: Installs `setproctitle` to rename the running process from `python` to `pathaction`. This simplifies identification in system monitoring tools such as `top`, `htop`, and `ps`.
+**Custom Process Title (`proctitle`)**: Installs `setproctitle` to rename the running process from `python` to `pathaction`. This simplifies identification in system monitoring tools such as `top`, `htop`, and `ps`.
 
-  ```bash
-  pip install "pathaction[proctitle]"
-  ```
+```bash
+pip install "pathaction[proctitle]"
+```
 
 To install both extras at once, use a comma-separated list:
 
