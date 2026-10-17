@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathaction"
+version = "1.0.1"
+description = "A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory"
+readme = "README.md"
+requires-python = ">=3.9, <4"
+license = "GPL-3.0-or-later"
+authors = [
+  { name = "James Cherti" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Utilities",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: System :: Systems Administration",
+  "Topic :: System :: Filesystems",
+  "Topic :: System :: Software Distribution",
+  "Environment :: Console",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: POSIX :: Other",
+]
+dependencies = [
+  "jinja2",
+  "markupsafe",
+  "PyYAML",
+  "schema",
+]
+
+[project.optional-dependencies]
+colors = ["colorama"]
+proctitle = ["setproctitle"]
+test = [
+  "pytest",
+  "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://github.com/jamescherti/pathaction"
+Repository = "https://github.com/jamescherti/pathaction"
+
+[project.scripts]
+pathaction = "pathaction:command_line_interface"
+
+[tool.setuptools.packages.find]
+include = ["pathaction*"]
