@@ -38,6 +38,8 @@ except ImportError:
 
 try:
     from setproctitle import setproctitle
+
+    SETPROCTITLE = True
 except ImportError:
     SETPROCTITLE = None
 
