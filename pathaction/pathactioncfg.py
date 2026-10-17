@@ -217,9 +217,7 @@ class ActionCommand(UserDict):
                 subprocess.list2cmdline(cmd) if isinstance(cmd, list) else str(cmd)
             )
 
-            with contextlib.suppress(KeyError):
-                # local timeout
-                timeout = self["timeout"]
+            timeout = self.get("timeout", timeout)
 
             if timeout > 0:
                 Util.pcolor(Util.COLOR_TEXT, f"{timeout} seconds", prefix="[TIMEOUT] ")
