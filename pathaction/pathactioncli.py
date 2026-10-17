@@ -41,7 +41,7 @@ try:
 
     SETPROCTITLE = True
 except ImportError:
-    SETPROCTITLE = None
+    SETPROCTITLE = False
 
 import jinja2
 import schema
@@ -144,7 +144,7 @@ class PathActionCli:
             sys.exit(0)
 
         if self.args.disallow_dir:
-            target_dir = Path(self.args.disallow_dir).resolve()
+            target_dir = Path(self.args.disallow_dir).absolute()
             if target_dir not in allowed_dirs.get_all():
                 print(
                     f"Error: The directory '{target_dir}' is not part "
@@ -163,7 +163,7 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = str(Path(pathaction_cfg.source_code).resolve())
+                source_code = str(Path(pathaction_cfg.source_code).absolute())
 
                 if self.args.allow_dir:
                     Path(CFG_ALLOWED_DIRS).parent.mkdir(parents=True, exist_ok=True)
@@ -355,7 +355,7 @@ class PathActionCli:
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
         source_code = Util.home_to_tilde(
-            str(Path(self.pathaction_cfg.source_code).resolve())
+            str(Path(self.pathaction_cfg.source_code).absolute())
         )
 
         if self.pathaction_cfg.verbose:

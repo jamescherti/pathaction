@@ -263,7 +263,9 @@ class ActionCommand(UserDict):
                             Path(stdout_path).exists()
                             and Path(stdout_path).samefile(stderr_path)
                         )
-                        or (Path(stdout_path).resolve() == Path(stderr_path).resolve())
+                        or (
+                            Path(stdout_path).absolute() == Path(stderr_path).absolute()
+                        )
                     )
                 ):
                     kwargs["stdout"] = stack.enter_context(
@@ -361,11 +363,11 @@ class PathActionCfg:
             return str(cwd)
 
         pathaction_path = Path(action_cmd.path_cfg).parent
-        return str((pathaction_path / str(cwd)).resolve())
+        return str((pathaction_path / str(cwd)).absolute())
 
     def find_command(self, action_name: str) -> ActionCommand | None:
         """Find command that matches the absolute path to the source code."""
-        abs_source_code = str(Path(self.source_code).resolve())
+        abs_source_code = str(Path(self.source_code).absolute())
 
         is_match_found = False
         action_cmd: ActionCommand | None = None
@@ -445,7 +447,7 @@ class PathActionCfg:
 
     def load_cfg(self, yaml_path: str) -> bool:
         """Merge data from the Yaml file."""
-        abs_yaml_path = str(Path(yaml_path).resolve())
+        abs_yaml_path = str(Path(yaml_path).absolute())
         if abs_yaml_path in self.loaded_yaml_path:
             # already loaded
             return False
@@ -570,7 +572,7 @@ class PathActionCfg:
 
     def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
-        source_code = str(Path(self.source_code).resolve())
+        source_code = str(Path(self.source_code).absolute())
         env = jinja2.Environment(  # nosec B701
             loader=jinja2.BaseLoader,  # type: ignore
             undefined=jinja2.StrictUndefined,
@@ -578,7 +580,7 @@ class PathActionCfg:
         )
 
         # pylint: disable=unnecessary-lambda
-        env.filters["shebang"] = lambda arg: Util.read_shebang(arg)
+        env.filters["shebang"] = lambda arg: Util.read_shebang(arg)  # noqa: PLW0108
         env.filters["shebang_list"] = lambda arg: shlex.split(Util.read_shebang(arg))
         env.filters["shebang_quote"] = lambda arg: subprocess.list2cmdline(
             [shlex.quote(item) for item in shlex.split(Util.read_shebang(arg))]
@@ -611,19 +613,19 @@ class PathActionCfg:
         env.filters["quote"] = env_filters_quote
         env.filters["startswith"] = lambda string, prefix: string.startswith(prefix)
         env.filters["endswith"] = lambda string, suffix: string.endswith(suffix)
-        env.filters["basename"] = lambda arg: os.path.basename(arg)  # noqa: PTH119
-        env.filters["dirname"] = lambda arg: os.path.dirname(arg)  # noqa: PTH120
+        env.filters["basename"] = lambda arg: os.path.basename(arg)  # noqa: PTH119, PLW0108
+        env.filters["dirname"] = lambda arg: os.path.dirname(arg)  # noqa: PTH120, PLW0108
         env.filters["file_only_dirname"] = lambda file_path: (
             os.path.dirname(file_path) if os.path.isfile(file_path) else file_path  # noqa: PTH113, PTH120
         )
-        env.filters["realpath"] = lambda arg: os.path.realpath(arg)
-        env.filters["abspath"] = lambda arg: os.path.abspath(arg)  # noqa: PTH100
-        env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)
+        env.filters["realpath"] = lambda arg: os.path.realpath(arg)  # noqa: PLW0108
+        env.filters["abspath"] = lambda arg: os.path.abspath(arg)  # noqa: PTH100, PLW0108
+        env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)  # noqa: PLW0108
         env.filters["joinpath"] = lambda lst: os.path.join(*lst)  # noqa: PTH118
-        env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)
-        env.filters["splitcmd"] = lambda arg: shlex.split(arg)
-        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)  # noqa: PTH111
-        env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)
+        env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
+        env.filters["splitcmd"] = lambda arg: shlex.split(arg)  # noqa: PLW0108
+        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)  # noqa: PTH111, PLW0108
+        env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)  # noqa: PLW0108
 
         j2_template = env.from_string(string)
 
