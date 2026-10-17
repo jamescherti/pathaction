@@ -225,8 +225,10 @@ You can target files using various matching strategies. Every match method also 
 
 * **`path_match`**: Standard glob pattern matching (e.g., `*.py`).
 * **`path_match_case`**: Case-sensitive glob pattern matching.
+* **`path_match_case_exclude`**: Case-sensitive glob pattern matching to explicitly ignore files.
 * **`path_regex`**: Regular expression path matching (case-insensitive by default).
 * **`path_regex_case`**: Case-sensitive regular expression matching.
+* **`path_regex_case_exclude`**: Case-sensitive regular expression matching to explicitly ignore files.
 * **`mimetype`**: Strict MIME type matching (e.g., `text/x-python`).
 * **`mimetype_match`**: Glob pattern matching for MIME types (e.g., `text/*`).
 * **`mimetype_regex`**: Regular expression matching for MIME types.

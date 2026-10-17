@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import contextlib
+import fnmatch
 import mimetypes
 import os
 import pwd
@@ -30,14 +31,12 @@ import shutil
 import subprocess  # nosec B404
 from collections import UserDict
 from copy import copy, deepcopy
-from glob import fnmatch  # type: ignore
 from pathlib import Path
 from typing import Any, ClassVar
 
 import jinja2
 import schema
 import yaml  # type: ignore
-from markupsafe import escape as jinja2_escape
 
 from .exceptions import PathActionError
 from .util import Util
@@ -65,11 +64,11 @@ class MatchMethods:
         return file_mime == string
 
     @staticmethod
-    def mimetype_match(path: str, string: str) -> bool | None:
+    def mimetype_match(path: str, string: str) -> bool:
         """Check if file mimetype matches using fnmatch."""
         file_mime = mimetypes.guess_type(path)[0]
         if not file_mime:
-            return None
+            return False
 
         return bool(fnmatch.fnmatch(file_mime, string))
 
@@ -120,8 +119,18 @@ class ActionCommand(UserDict):
         schema.Optional("mimetype_exclude"): schema.Or(str, [str]),  # type: ignore
         schema.Optional("path_regex"): schema.Or(str, [str]),  # type: ignore
         schema.Optional("path_regex_exclude"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_regex_case"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_regex_case_exclude"): schema.Or(
+            str,
+            [str],  # type: ignore
+        ),
         schema.Optional("path_match"): schema.Or(str, [str]),  # type: ignore
         schema.Optional("path_match_exclude"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_match_case"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_match_case_exclude"): schema.Or(
+            str,
+            [str],  # type: ignore
+        ),
         schema.Optional("comment"): str,
         schema.Optional("timeout"): int,
         schema.Optional("shell"): bool,
@@ -154,12 +163,19 @@ class ActionCommand(UserDict):
 
         parent = Path(path_cfg).parent
         self.default_cwd = "" if parent == Path() else str(parent)
-        self["path_cfg"] = str(jinja2_escape(path_cfg))
+        self["path_cfg"] = str(path_cfg)
         if "cwd" not in self:
             self["cwd"] = self.default_cwd
 
-        # Check the validity of the regex
-        for regex_key in ("path_regex_case", "path_regex", "mimetype_regex"):
+        # Also validate the *_exclude regex keys for invalid regular expressions.
+        for regex_key in (
+            "path_regex_case",
+            "path_regex_case_exclude",
+            "path_regex",
+            "path_regex_exclude",
+            "mimetype_regex",
+            "mimetype_regex_exclude",
+        ):
             if regex_key in self:
                 if isinstance(self[regex_key], str):
                     list_regex = [self[regex_key]]
@@ -187,7 +203,12 @@ class ActionCommand(UserDict):
 
     def __getattr__(self, key: str) -> Any:
         """Retrieve attribute."""
-        return self[key]
+        # Raise AttributeError instead of KeyError to comply with Python's data model
+        # (fixes hasattr, getattr with default, and copy).
+        try:
+            return self[key]
+        except KeyError as err:
+            raise AttributeError(key) from err
 
     def run(
         self, shell_path: str, timeout: float = 0, debug: bool = False
@@ -204,6 +225,11 @@ class ActionCommand(UserDict):
             list_commands = self.list_commands
         else:
             raise PathActionError("No command has been defined")
+
+        # Initialize cmd and errno to prevent UnboundLocalError if
+        # list_commands is an empty list.
+        cmd: str | list = ""
+        errno: int = 0
 
         for cmd in list_commands:
             if first_cmd:
@@ -255,12 +281,16 @@ class ActionCommand(UserDict):
                 if self.get("stderr"):
                     stderr_path = self["stderr"]
 
+                # Check that BOTH stdout_path and stderr_path exist before
+                # calling .samefile(), otherwise .samefile() raises FileNotFoundError
+                # when stdout_path exists but stderr_path does not.
                 if (
                     stdout_path
                     and stderr_path
                     and (
                         (
                             Path(stdout_path).exists()
+                            and Path(stderr_path).exists()
                             and Path(stdout_path).samefile(stderr_path)
                         )
                         or (Path(stdout_path).resolve() == Path(stderr_path).resolve())
@@ -358,14 +388,16 @@ class PathActionCfg:
         cwd = str(self._jinja2_render(cwd, cwd=action_cmd.default_cwd))
 
         if Path(cwd).is_absolute():
-            return str(cwd)
+            return os.path.normpath(cwd)
 
         pathaction_path = Path(action_cmd.path_cfg).parent
-        return str((pathaction_path / str(cwd)).absolute())
+        # Use os.path.abspath() instead of Path.absolute() so relative '..'
+        # segments in cwd are normalized while still preserving symlinks.
+        return os.path.abspath(pathaction_path / str(cwd))  # noqa: PTH100
 
     def find_command(self, action_name: str) -> ActionCommand | None:
         """Find command that matches the absolute path to the source code."""
-        abs_source_code = str(Path(self.source_code).absolute())
+        abs_source_code = os.path.abspath(self.source_code)  # noqa: PTH100
 
         is_match_found = False
         action_cmd: ActionCommand | None = None
@@ -381,6 +413,15 @@ class PathActionCfg:
                 continue
 
             action_found = True
+
+            # Evaluate cur_action_cmd["cwd"] once per action before iterating
+            # over patterns so it is not repeatedly re-rendered on each pattern.
+            cur_action_cmd["cwd"] = self.get_action_cmd_cwd(cur_action_cmd)
+
+            # Track exclusion separately from inclusion. Previously, matching
+            # an *_exclude rule set is_match_found = True and broke out of the outer
+            # loop, preventing subsequent actions from being checked.
+            is_excluded = False
             for (
                 match_name,
                 match_method,
@@ -396,24 +437,22 @@ class PathActionCfg:
                 )
 
                 for pattern in list_patterns:
-                    #
                     # Fix cwd after Jinja2 is rendered.
-                    #
                     # This part has to be interpreter after Jinja2 render
                     # (check above)
-                    #
-                    # if "cwd" in action_cmd:
                     cur_action_cmd["cwd"] = self.get_action_cmd_cwd(cur_action_cmd)
 
                     pattern = self._jinja2_render(pattern, cwd=cur_action_cmd.cwd)
 
                     if match_method(abs_source_code, str(pattern)):
-                        is_match_found = True
                         if match_is_include:
+                            is_match_found = True
                             action_cmd = cur_action_cmd.copy()
+                        else:
+                            is_excluded = True
                         break
 
-                if is_match_found:
+                if is_excluded or is_match_found:
                     break
 
             if is_match_found:
@@ -436,7 +475,9 @@ class PathActionCfg:
         # example)
         #
         for key in action_cmd:
-            if key == "cwd":
+            # Skip internal "path_cfg" in addition to "cwd" so file paths
+            # containing Jinja-like characters are not evaluated as templates.
+            if key in ("cwd", "path_cfg"):
                 continue
 
             action_cmd[key] = self._jinja2_render(action_cmd[key], cwd=action_cmd.cwd)
@@ -571,7 +612,7 @@ class PathActionCfg:
 
     def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
-        source_code = str(Path(self.source_code).absolute())
+        source_code = os.path.abspath(self.source_code)  # noqa: PTH100
         env = jinja2.Environment(  # nosec B701
             loader=jinja2.BaseLoader,  # type: ignore
             undefined=jinja2.StrictUndefined,
@@ -592,7 +633,9 @@ class PathActionCfg:
                     for item in arg
                 ]
 
-            if type(arg) in [str, int, float]:
+            # Use isinstance() (excluding bool) instead of type(arg) in [...]
+            # so string subclasses are supported and booleans are rejected.
+            if isinstance(arg, (str, int, float)) and not isinstance(arg, bool):
                 return shlex.quote(str(arg))
 
             raise ValueError(f"quote: invalid type: {arg}")
@@ -648,7 +691,6 @@ class PathActionCfg:
         Returns: string or list of strings
 
         """
-        arg_was_not_list = False
         if isinstance(arg, str):
             return self._jinja2_render_string(string=arg, cwd=cwd)
 
@@ -676,7 +718,7 @@ class PathActionCfg:
 
                 result_list.append(item)
 
-            return result_list[0] if arg_was_not_list else result_list
+            return result_list
 
         return arg
 

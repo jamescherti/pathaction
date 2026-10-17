@@ -97,10 +97,19 @@ class AllowedPaths:
         with Path(path).open(encoding="utf-8") as fhandler:
             self.load_yaml_from_string(fhandler)
 
-    def load_yaml_from_string(self, stream: TextIO) -> None:
-        """Load from a string that contains YAML data."""
+    def load_yaml_from_string(self, stream: TextIO | str) -> None:
+        """Load from a string or stream that contains YAML data."""
         content = yaml.safe_load(stream)
-        self._permanently_allowed = {Path(p) for p in content["permanently_allowed"]}
+        # Guard against empty YAML files (content is None) or missing keys, and resolve
+        # loaded paths so they match the format used by add().
+        if isinstance(content, dict) and isinstance(
+            content.get("permanently_allowed"), list
+        ):
+            self._permanently_allowed = {
+                Path(p).resolve() for p in content["permanently_allowed"]
+            }
+        else:
+            self._permanently_allowed = set()
 
     def save_to_yaml(self, path: str | Path) -> None:
         """Save the list of allowed paths to a YAML file.
