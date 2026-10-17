@@ -43,9 +43,9 @@ def test_pathactioncli_dir_not_allowed():
     with patch.object(sys, "argv", argv):
         # Test success
         with pytest.raises(SystemExit) as exitinfo:
-            pathactioncli = PathActionCli(limit_loop=1,
-                                            limit_load_cfg=1,
-                                            allowed_dirs=allowed_dirs)
+            pathactioncli = PathActionCli(
+                limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs
+            )
 
         assert exitinfo.value.code == 1
 
@@ -55,9 +55,9 @@ def test_pathactioncli(allowed_dirs: AllowedPaths):
     with patch.object(sys, "argv", argv):
         # Test success
         with pytest.raises(SystemExit) as exitinfo:
-            pathactioncli = PathActionCli(limit_loop=1,
-                                            limit_load_cfg=1,
-                                            allowed_dirs=allowed_dirs)
+            pathactioncli = PathActionCli(
+                limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs
+            )
 
         assert exitinfo.value.code == 64
 
@@ -73,23 +73,24 @@ def test_pathactioncli_error_between_2_success(allowed_dirs: AllowedPaths):
     with patch.object(sys, "argv", argv):
         with pytest.raises(SystemExit) as exitinfo:
             # Test success
-            pathactioncli = PathActionCli(limit_loop=1,
-                                          limit_load_cfg=1,
-                                          allowed_dirs=allowed_dirs)
+            pathactioncli = PathActionCli(
+                limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs
+            )
 
         assert exitinfo.value.code == 111
 
 
-def test_pathactioncli_error_between_2_successful_files(
-        allowed_dirs: AllowedPaths):
-    argv = [sys.argv[0],
-            str(QA_BASEDIR.joinpath("case1", "file.nh")),
-            str(QA_BASEDIR.joinpath("case1", "file2.nh"))]
+def test_pathactioncli_error_between_2_successful_files(allowed_dirs: AllowedPaths):
+    argv = [
+        sys.argv[0],
+        str(QA_BASEDIR.joinpath("case1", "file.nh")),
+        str(QA_BASEDIR.joinpath("case1", "file2.nh")),
+    ]
     with patch.object(sys, "argv", argv):
         with pytest.raises(SystemExit) as exitinfo:
             # Test success
-            pathactioncli = PathActionCli(limit_loop=1,
-                                            limit_load_cfg=1,
-                                            allowed_dirs=allowed_dirs)
+            pathactioncli = PathActionCli(
+                limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs
+            )
 
         assert exitinfo.value.code == 111

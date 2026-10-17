@@ -30,6 +30,7 @@ from typing import Any, Union
 try:
     from colorama import Fore, Style
 except ImportError:
+
     class Fore:  # type: ignore
         WHITE: str = ""
         GREEN: str = ""
@@ -39,15 +40,17 @@ except ImportError:
     class Style:  # type: ignore
         RESET_ALL: str = ""
 
+
 from .exceptions import PathActionError
 
 
 class Util:
     """Provide helper methods for CLI formatting and execution."""
 
-    IS_A_TTY = ((hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()) and
-                (("TERM" not in os.environ) or
-                 ("TERM" in os.environ and os.environ["TERM"] != "dumb")))
+    IS_A_TTY = (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) and (
+        ("TERM" not in os.environ)
+        or ("TERM" in os.environ and os.environ["TERM"] != "dumb")
+    )
     COLOR_TEXT = Fore.WHITE
     COLOR_HIGHLIGHT = Fore.GREEN
     COLOR_ERROR = Fore.RED
@@ -57,13 +60,12 @@ class Util:
     @staticmethod
     def error(message: str) -> None:
         """Print an error message directly to sys.stderr."""
-        print(os.path.basename(sys.argv[0]) + ": Error: " + message,
-              file=sys.stderr)
+        print(os.path.basename(sys.argv[0]) + ": Error: " + message, file=sys.stderr)
 
     @staticmethod
-    def which(cmd: str,
-              cwd: Union[str, None] = None,
-              env_path: Union[str, None] = None) -> str:
+    def which(
+        cmd: str, cwd: Union[str, None] = None, env_path: Union[str, None] = None
+    ) -> str:
         """Return the path which conforms to the given mode on the PATH."""
         if cwd:
             cwd_str = os.path.abspath(cwd)
@@ -85,8 +87,11 @@ class Util:
             cmd_path = os.path.normpath(os.path.join(cwd_str, cmd))
             relative = True
 
-        if os.path.isfile(cmd_path) and (relative or os.path.isabs(cmd_path)) \
-                and os.access(cmd_path, os.X_OK):
+        if (
+            os.path.isfile(cmd_path)
+            and (relative or os.path.isabs(cmd_path))
+            and os.access(cmd_path, os.X_OK)
+        ):
             return cmd_path
 
         try:
@@ -101,9 +106,9 @@ class Util:
             if os.path.isfile(cmd_path) and os.access(cmd_path, os.X_OK):
                 return cmd_path
 
-        raise PathActionError(f"the command '{cmd}' wasn't found "
-                              f"in $PATH \"{paths}\" "
-                              f"or in '{cwd_str}'.")
+        raise PathActionError(
+            f"the command '{cmd}' wasn't found in $PATH \"{paths}\" or in '{cwd_str}'."
+        )
 
     @staticmethod
     def color(color: str, string: str = "") -> str:
@@ -115,8 +120,13 @@ class Util:
         return f"{color}{string}{color_reset}"
 
     @staticmethod
-    def pcolor(color: str, string: str = "", prefix: str = "",
-               file: Any = sys.stderr, **kwargs: Any) -> str:
+    def pcolor(
+        color: str,
+        string: str = "",
+        prefix: str = "",
+        file: Any = sys.stderr,
+        **kwargs: Any,
+    ) -> str:
         """Print a colored string with an optional prefix."""
         colored_text = Util.color(color, string)
         prefix = Util.color(Util.COLOR_HIGHLIGHT, prefix)
@@ -125,23 +135,31 @@ class Util:
         return result
 
     @staticmethod
-    def ask_question(question: str,
-                     answers: list,
-                     timeout: int = 0,
-                     hook_invalid_entry: Callable = lambda _: None,
-                     empty_stdin: bool = True) -> str:
+    def ask_question(
+        question: str,
+        answers: list,
+        timeout: int = 0,
+        hook_invalid_entry: Callable = lambda _: None,
+        empty_stdin: bool = True,
+    ) -> str:
         """Prompt a question and wait for specific answers."""
         # Empty stdin
         if empty_stdin:
-            while sys.stdin in select.select([sys.stdin],  # pragma: no cover
-                                             [],  # pragma: no cover
-                                             [],  # pragma: no cover
-                                             0)[0]:  # pragma: no cover
+            while (
+                sys.stdin
+                in select.select(
+                    [sys.stdin],  # pragma: no cover
+                    [],  # pragma: no cover
+                    [],  # pragma: no cover
+                    0,
+                )[0]
+            ):  # pragma: no cover
                 line = sys.stdin.readline()  # pragma: no cover
                 if not line:  # pragma: no cover
                     break  # pragma: no cover
 
         if timeout > 0:
+
             def alarm_handler(*args):
                 """Handle the SIGALRM signal."""
                 raise TimeoutError  # pragma: no cover
@@ -152,10 +170,14 @@ class Util:
         try:
             while True:
                 try:
-                    Util.pcolor(Util.COLOR_QUESTION,
-                                "\n" + question,
-                                end="", file=sys.stdout, flush=True)
-                    answer = input()    # nosec: B322
+                    Util.pcolor(
+                        Util.COLOR_QUESTION,
+                        "\n" + question,
+                        end="",
+                        file=sys.stdout,
+                        flush=True,
+                    )
+                    answer = input()  # nosec: B322
                 except (EOFError, KeyboardInterrupt):  # pragma: no cover
                     # Ignore EOF (CTRL-D) and SIGINT (CTRL-C)
                     answer = ""  # pragma: no cover
@@ -206,5 +228,5 @@ class Util:
         home = os.path.expanduser(f"~{os.sep}")
         path_str = f"{path}{os.sep}"
         if path_str.startswith(home):
-            return f"~{os.sep}{path_str[len(home):-len(os.sep)]}"
+            return f"~{os.sep}{path_str[len(home) : -len(os.sep)]}"
         return path
