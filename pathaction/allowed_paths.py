@@ -47,7 +47,7 @@ class AllowedPaths:
             path: The path to be added.
             permanent: True to add the path permanently.
         """
-        resolved_path = Path(path).absolute()
+        resolved_path = Path(path).resolve()
         if permanent:
             self._permanently_allowed.add(resolved_path)
             self._temporarily_allowed.discard(resolved_path)
@@ -61,7 +61,7 @@ class AllowedPaths:
         Args:
             path: The path to be removed.
         """
-        resolved_path = Path(path).absolute()
+        resolved_path = Path(path).resolve()
         self._permanently_allowed.discard(resolved_path)
         self._temporarily_allowed.discard(resolved_path)
 
@@ -82,7 +82,7 @@ class AllowedPaths:
         Returns:
             True if the path is allowed, False otherwise.
         """
-        rpath = Path(path).absolute()
+        rpath = Path(path).resolve()
         return any(
             rpath.is_relative_to(allowed_path)  # type: ignore
             for allowed_path in self

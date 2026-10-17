@@ -263,9 +263,7 @@ class ActionCommand(UserDict):
                             Path(stdout_path).exists()
                             and Path(stdout_path).samefile(stderr_path)
                         )
-                        or (
-                            Path(stdout_path).absolute() == Path(stderr_path).absolute()
-                        )
+                        or (Path(stdout_path).resolve() == Path(stderr_path).resolve())
                     )
                 ):
                     kwargs["stdout"] = stack.enter_context(
@@ -447,7 +445,9 @@ class PathActionCfg:
 
     def load_cfg(self, yaml_path: str) -> bool:
         """Merge data from the Yaml file."""
-        abs_yaml_path = str(Path(yaml_path).absolute())
+        # Resolve: Prevent the parser from loading the same configuration file multiple
+        # times.
+        abs_yaml_path = str(Path(yaml_path).resolve())
         if abs_yaml_path in self.loaded_yaml_path:
             # already loaded
             return False
@@ -507,7 +507,7 @@ class PathActionCfg:
         # directories
         #
         filename = ""
-        dirname = os.path.realpath(self.source_code)
+        dirname = os.path.abspath(self.source_code)  # noqa: PTH100
         first = True
         while True:
             if first:
