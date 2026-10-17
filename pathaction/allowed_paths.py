@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from pprint import pformat
-from typing import TextIO, Union
+from typing import TextIO
 
 import yaml
 
@@ -40,7 +40,7 @@ class AllowedPaths:
         self._temporarily_allowed = set()
         self._permanently_allowed = set()
 
-    def add(self, path: Union[str, Path], permanent: bool) -> None:
+    def add(self, path: str | Path, permanent: bool) -> None:
         """Add a path to the list of allowed paths.
 
         Args:
@@ -55,7 +55,7 @@ class AllowedPaths:
             self._temporarily_allowed.add(resolved_path)
             self._permanently_allowed.discard(resolved_path)
 
-    def remove(self, path: Union[str, Path]) -> None:
+    def remove(self, path: str | Path) -> None:
         """Remove a path from the list of allowed paths.
 
         Args:
@@ -73,7 +73,7 @@ class AllowedPaths:
         """Iterate over all allowed paths."""
         return iter(self.get_all())
 
-    def is_allowed(self, path: Union[str, Path]) -> bool:
+    def is_allowed(self, path: str | Path) -> bool:
         """Check if a path is allowed, including subdirectories and files.
 
         Args:
@@ -88,13 +88,13 @@ class AllowedPaths:
             for allowed_path in self
         )
 
-    def load_from_yaml(self, path: Union[str, Path]) -> None:
+    def load_from_yaml(self, path: str | Path) -> None:
         """Load the list of allowed paths from a YAML file.
 
         Args:
             path: The path to the YAML file containing allowed paths.
         """
-        with open(Path(path), "r", encoding="utf-8") as fhandler:
+        with Path(path).open(encoding="utf-8") as fhandler:
             self.load_yaml_from_string(fhandler)
 
     def load_yaml_from_string(self, stream: TextIO) -> None:
@@ -102,14 +102,14 @@ class AllowedPaths:
         content = yaml.safe_load(stream)
         self._permanently_allowed = set(map(Path, content["permanently_allowed"]))
 
-    def save_to_yaml(self, path: Union[str, Path]) -> None:
+    def save_to_yaml(self, path: str | Path) -> None:
         """Save the list of allowed paths to a YAML file.
 
         Args:
             path: The path to the YAML file where allowed paths will be saved.
         """
         file_path = Path(path)
-        with open(file_path, "w", encoding="utf-8") as fhandler:
+        with file_path.open("w", encoding="utf-8") as fhandler:
             yaml.dump(
                 self._gen_saveable_data(), fhandler, default_flow_style=False, indent=2
             )
