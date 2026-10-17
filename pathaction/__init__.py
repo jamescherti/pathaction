@@ -26,5 +26,5 @@ def command_line_interface():
     PathActionCli()  # pragma: no cover
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     command_line_interface()

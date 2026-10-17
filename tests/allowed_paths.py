@@ -70,8 +70,7 @@ def test_allowed_paths_dump_and_load_yaml_from_string():
     allowed_paths2 = AllowedPaths()
     allowed_paths2.load_yaml_from_string(allowed_paths.dump_to_yaml())
 
-    assert allowed_paths._permanently_allowed == \
-        allowed_paths2._permanently_allowed
+    assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
     assert allowed_paths2._temporarily_allowed == set()
 
 
@@ -91,8 +90,7 @@ def test_allowed_paths_save_and_load_yaml_from_file():
         if tmp_path:
             os.remove(tmp_path)
 
-        assert allowed_paths._permanently_allowed == \
-            allowed_paths2._permanently_allowed
+        assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
         assert allowed_paths2._temporarily_allowed == set()
 
 

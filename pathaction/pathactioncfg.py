@@ -76,9 +76,11 @@ class ActionCommand(UserDict):
     """Represent a command in an action."""
 
     match_methods = [
-        (match_name if match_is_include else f"{match_name}_exclude",
-         match_method,
-         match_is_include)
+        (
+            match_name if match_is_include else f"{match_name}_exclude",
+            match_method,
+            match_is_include,
+        )
         for match_is_include in (False, True)
         for match_name, match_method in (
             ("path_match", fnmatch.fnmatch),
@@ -86,12 +88,8 @@ class ActionCommand(UserDict):
             ("mimetype_regex", MatchMethods.mimetype_regex),
             ("mimetype_match", MatchMethods.mimetype_match),
             ("mimetype", MatchMethods.mimetype),
-            ("path_regex",
-             lambda path, string:
-             re.search(string, path, re.IGNORECASE)),
-            ("path_regex_case",
-             lambda path, string:
-             re.search(string, path)),
+            ("path_regex", lambda path, string: re.search(string, path, re.IGNORECASE)),
+            ("path_regex_case", lambda path, string: re.search(string, path)),
         )
     ]
 
@@ -161,15 +159,19 @@ class ActionCommand(UserDict):
                     try:
                         re.compile(regex)  # type: ignore
                     except re.error as err:
-                        err_str = (f"the regular expression '{regex}' "
-                                   f"is invalid (loaded from "
-                                   f"'{self['path_cfg']}')")
+                        err_str = (
+                            f"the regular expression '{regex}' "
+                            f"is invalid (loaded from "
+                            f"'{self['path_cfg']}')"
+                        )
                         raise PathActionError(err_str) from err
 
         # The keys "command" and "list_commands" are mutually exclusive
         if "command" in self and "list_commands" in self:
-            err_str = ("The keys 'command' and 'list_commands' cannot be "
-                       "both defined in " + str(self))
+            err_str = (
+                "The keys 'command' and 'list_commands' cannot be "
+                "both defined in " + str(self)
+            )
             raise PathActionError(err_str)
 
     def __getattr__(self, key: str) -> Any:
@@ -178,9 +180,9 @@ class ActionCommand(UserDict):
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
-    def run(self, shell_path: str,
-            timeout: float = 0,
-            debug: bool = False) -> tuple[Union[str, list], int]:
+    def run(
+        self, shell_path: str, timeout: float = 0, debug: bool = False
+    ) -> tuple[Union[str, list], int]:
         """Execute a command.
 
         Returns:
@@ -200,9 +202,9 @@ class ActionCommand(UserDict):
             else:
                 Util.pcolor(Util.COLOR_TEXT, "")
 
-            cmd_str = (subprocess.list2cmdline(cmd)
-                       if isinstance(cmd, list)
-                       else str(cmd))
+            cmd_str = (
+                subprocess.list2cmdline(cmd) if isinstance(cmd, list) else str(cmd)
+            )
 
             try:
                 # local timeout
@@ -211,16 +213,11 @@ class ActionCommand(UserDict):
                 pass
 
             if timeout > 0:
-                Util.pcolor(Util.COLOR_TEXT,
-                            f"{timeout} seconds",
-                            prefix="[TIMEOUT] ")
+                Util.pcolor(Util.COLOR_TEXT, f"{timeout} seconds", prefix="[TIMEOUT] ")
             elif debug:
-                Util.pcolor(Util.COLOR_TEXT, "No timeout.",
-                            prefix="[TIMEOUT] ")
+                Util.pcolor(Util.COLOR_TEXT, "No timeout.", prefix="[TIMEOUT] ")
 
-            Util.pcolor(Util.COLOR_TEXT,
-                        cmd_str.replace("\n", r"\n"),
-                        prefix="[RUN] ")
+            Util.pcolor(Util.COLOR_TEXT, cmd_str.replace("\n", r"\n"), prefix="[RUN] ")
 
             shell = self["shell"]
             cwd = self["cwd"]
@@ -232,8 +229,7 @@ class ActionCommand(UserDict):
                 if isinstance(cmd, list):
                     cmd = subprocess.list2cmdline(cmd)
             else:
-                cmd = shlex.split(cmd) \
-                    if isinstance(cmd, str) else deepcopy(cmd)
+                cmd = shlex.split(cmd) if isinstance(cmd, str) else deepcopy(cmd)
                 if not cmd:
                     raise PathActionError("the command is empty.")
 
@@ -255,11 +251,19 @@ class ActionCommand(UserDict):
                 if "stderr" in self and self["stderr"]:
                     stderr_path = self["stderr"]
 
-                if (stdout_path and stderr_path and
-                        ((os.path.exists(stdout_path) and
-                          os.path.samefile(stdout_path, stderr_path)) or
-                         (os.path.abspath(stdout_path) ==
-                          os.path.abspath(stderr_path)))):
+                if (
+                    stdout_path
+                    and stderr_path
+                    and (
+                        (
+                            os.path.exists(stdout_path)
+                            and os.path.samefile(stdout_path, stderr_path)
+                        )
+                        or (
+                            os.path.abspath(stdout_path) == os.path.abspath(stderr_path)
+                        )
+                    )
+                ):
                     kwargs["stdout"] = open(self["stdout"], "wb")
                     kwargs["stderr"] = kwargs["stdout"]
                     stdout_path = None
@@ -276,7 +280,7 @@ class ActionCommand(UserDict):
                         cmd,
                         shell=True,  # nosec: B602
                         executable=shell_path,
-                        **kwargs  # type: ignore
+                        **kwargs,  # type: ignore
                     )
                 else:
                     errno = subprocess.call(cmd, **kwargs)  # type: ignore
@@ -303,32 +307,27 @@ class PathActionCfg:
         "confirm_after_timeout": 0,
         "debug": False,
         "verbose": False,
-        "last": False
+        "last": False,
     }
 
     schema_pathaction_cfg = {
-        schema.Optional('vars'): {
-            schema.Optional(str):
-            schema.Or(
+        schema.Optional("vars"): {
+            schema.Optional(str): schema.Or(
                 schema.Optional(str),
                 schema.Optional(list),
                 schema.Optional(dict),
                 schema.Optional(int),
                 schema.Optional(bool),
-                schema.Optional(float)
+                schema.Optional(float),
             )
         },
-
         schema.Optional("options"): ActionCommand.schema_qa_options,
-
-        'actions': [ActionCommand.schema_action_command],
+        "actions": [ActionCommand.schema_action_command],
     }
 
     def __init__(self, source_code: str) -> None:
         """Initialize the class PathActionCfg."""
-        self.schema: schema.Schema = schema.Schema(
-            PathActionCfg.schema_pathaction_cfg
-        )
+        self.schema: schema.Schema = schema.Schema(PathActionCfg.schema_pathaction_cfg)
 
         # Init vars
         self.source_code: str = os.path.normpath(source_code)
@@ -348,7 +347,7 @@ class PathActionCfg:
         self.cfg = {
             "options": deepcopy(PathActionCfg.default_options),
             "vars": {},
-            "actions": {}
+            "actions": {},
         }
 
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
@@ -360,9 +359,7 @@ class PathActionCfg:
             return str(cwd)
 
         pathaction_path = os.path.dirname(action_cmd.path_cfg)
-        return str(os.path.abspath(
-            os.path.join(pathaction_path, str(cwd))
-        ))
+        return str(os.path.abspath(os.path.join(pathaction_path, str(cwd))))
 
     def find_command(self, action_name: str) -> Union[ActionCommand, None]:
         """Find command that matches the absolute path to the source code."""
@@ -382,8 +379,11 @@ class PathActionCfg:
                 continue
 
             action_found = True
-            for (match_name, match_method,
-                 match_is_include) in ActionCommand.match_methods:
+            for (
+                match_name,
+                match_method,
+                match_is_include,
+            ) in ActionCommand.match_methods:
                 if match_name not in cur_action_cmd:
                     continue
 
@@ -401,11 +401,9 @@ class PathActionCfg:
                     # (check above)
                     #
                     # if "cwd" in action_cmd:
-                    cur_action_cmd["cwd"] = \
-                        self.get_action_cmd_cwd(cur_action_cmd)
+                    cur_action_cmd["cwd"] = self.get_action_cmd_cwd(cur_action_cmd)
 
-                    pattern = self._jinja2_render(pattern,
-                                                  cwd=cur_action_cmd.cwd)
+                    pattern = self._jinja2_render(pattern, cwd=cur_action_cmd.cwd)
 
                     if match_method(abs_source_code, str(pattern)):
                         is_match_found = True
@@ -439,10 +437,7 @@ class PathActionCfg:
             if key == "cwd":
                 continue
 
-            action_cmd[key] = self._jinja2_render(
-                action_cmd[key],
-                cwd=action_cmd.cwd
-            )
+            action_cmd[key] = self._jinja2_render(action_cmd[key], cwd=action_cmd.cwd)
 
         return action_cmd
 
@@ -454,7 +449,7 @@ class PathActionCfg:
             return False
 
         try:
-            with open(abs_yaml_path, 'r', encoding="utf-8") as fhandler:
+            with open(abs_yaml_path, "r", encoding="utf-8") as fhandler:
                 raw_cfg = yaml.full_load(fhandler)
         except yaml.YAMLError as err:
             err_msg = f"cannot load the YAML file '{abs_yaml_path}'. {err}"
@@ -463,8 +458,7 @@ class PathActionCfg:
         try:
             self.schema.validate(raw_cfg)
         except schema.SchemaError as err:
-            raise schema.SchemaError(f"'{abs_yaml_path}': {err}") \
-                from err
+            raise schema.SchemaError(f"'{abs_yaml_path}': {err}") from err
 
         # Merge default values
         for key in ("vars", "options"):
@@ -488,8 +482,10 @@ class PathActionCfg:
 
         # Checks
         if not os.access(self.cfg["options"]["shell_path"], os.X_OK):
-            err_msg = (f"the shell '{self.cfg['options']['shell_path']}' "
-                       "does not exist or is not an executable.")
+            err_msg = (
+                f"the shell '{self.cfg['options']['shell_path']}' "
+                "does not exist or is not an executable."
+            )
             raise PathActionError(err_msg)
 
         self.loaded_yaml_path.append(abs_yaml_path)
@@ -525,19 +521,19 @@ class PathActionCfg:
                 break
 
             list_pathaction_files = Util.file_ends_with(
-                os.path.join(dirname, ".pathaction"),
-                PathActionCfg.yaml_ext
+                os.path.join(dirname, ".pathaction"), PathActionCfg.yaml_ext
             )
 
             if len(list_pathaction_files) > 1:
-                err_str = ("more than one file that ends with " +
-                           ", ".join(PathActionCfg.yaml_ext) +
-                           " was found: " +
-                           ", ".join(list_pathaction_files))
+                err_str = (
+                    "more than one file that ends with "
+                    + ", ".join(PathActionCfg.yaml_ext)
+                    + " was found: "
+                    + ", ".join(list_pathaction_files)
+                )
                 raise PathActionError(err_str)
 
-            if list_pathaction_files and \
-                    list_pathaction_files[0] not in list_cfg_files:
+            if list_pathaction_files and list_pathaction_files[0] not in list_cfg_files:
                 list_cfg_files.insert(0, list_pathaction_files[0])
 
             limit -= 1
@@ -572,27 +568,25 @@ class PathActionCfg:
     def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
         source_code = os.path.abspath(self.source_code)
-        env = jinja2.Environment(   # nosec B701
-            loader=jinja2.BaseLoader,    # type: ignore
+        env = jinja2.Environment(  # nosec B701
+            loader=jinja2.BaseLoader,  # type: ignore
             undefined=jinja2.StrictUndefined,
-            autoescape=False
+            autoescape=False,
         )
 
         # pylint: disable=unnecessary-lambda
-        env.filters['shebang'] = lambda arg: Util.read_shebang(arg)
-        env.filters['shebang_list'] = \
-            lambda arg: shlex.split(Util.read_shebang(arg))
-        env.filters['shebang_quote'] = \
-            lambda arg: \
-            subprocess.list2cmdline(
-                [shlex.quote(item)
-                 for item in shlex.split(Util.read_shebang(arg))]
+        env.filters["shebang"] = lambda arg: Util.read_shebang(arg)
+        env.filters["shebang_list"] = lambda arg: shlex.split(Util.read_shebang(arg))
+        env.filters["shebang_quote"] = lambda arg: subprocess.list2cmdline(
+            [shlex.quote(item) for item in shlex.split(Util.read_shebang(arg))]
         )
 
         def env_filters_quote(arg):
             if isinstance(arg, list):
-                return [(shlex.quote(item) if isinstance(item, str) else item)
-                        for item in arg]
+                return [
+                    (shlex.quote(item) if isinstance(item, str) else item)
+                    for item in arg
+                ]
 
             if type(arg) in [str, int, float]:
                 return shlex.quote(str(arg))
@@ -610,41 +604,36 @@ class PathActionCfg:
 
             raise ValueError(f"which: invalid type: {cmd_str}")
 
-        env.filters['which'] = env_filters_which
-        env.filters['quote'] = env_filters_quote
-        env.filters['startswith'] = \
-            lambda string, prefix: string.startswith(prefix)
-        env.filters['endswith'] = \
-            lambda string, suffix: string.endswith(suffix)
-        env.filters['basename'] = lambda arg: os.path.basename(arg)
-        env.filters['dirname'] = lambda arg: os.path.dirname(arg)
-        env.filters['file_only_dirname'] = lambda file_path: \
-            os.path.dirname(file_path) \
-            if os.path.isfile(file_path) else file_path
-        env.filters['realpath'] = lambda arg: os.path.realpath(arg)
-        env.filters['abspath'] = lambda arg: os.path.abspath(arg)
-        env.filters['relpath'] = lambda *arg: os.path.relpath(*arg)
-        env.filters['joinpath'] = lambda lst: os.path.join(*lst)
-        env.filters['joincmd'] = lambda lst: subprocess.list2cmdline(lst)
-        env.filters['splitcmd'] = lambda arg: shlex.split(arg)
-        env.filters['expanduser'] = lambda arg: os.path.expanduser(arg)
-        env.filters['expandvars'] = lambda arg: os.path.expandvars(arg)
+        env.filters["which"] = env_filters_which
+        env.filters["quote"] = env_filters_quote
+        env.filters["startswith"] = lambda string, prefix: string.startswith(prefix)
+        env.filters["endswith"] = lambda string, suffix: string.endswith(suffix)
+        env.filters["basename"] = lambda arg: os.path.basename(arg)
+        env.filters["dirname"] = lambda arg: os.path.dirname(arg)
+        env.filters["file_only_dirname"] = lambda file_path: (
+            os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+        )
+        env.filters["realpath"] = lambda arg: os.path.realpath(arg)
+        env.filters["abspath"] = lambda arg: os.path.abspath(arg)
+        env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)
+        env.filters["joinpath"] = lambda lst: os.path.join(*lst)
+        env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)
+        env.filters["splitcmd"] = lambda arg: shlex.split(arg)
+        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)
+        env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)
 
         j2_template = env.from_string(string)
 
         j2_vars: dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
         # pylint: disable=use-dict-literal
-        j2_vars.update(dict(file=source_code,
-                            env=self.env,
-                            cwd=cwd,
-                            pathsep=os.sep))
+        j2_vars.update(dict(file=source_code, env=self.env, cwd=cwd, pathsep=os.sep))
 
         return j2_template.render(**j2_vars)
 
-    def _jinja2_render(self,
-                       arg: Union[str, list, dict, int, float, bool],
-                       cwd: str) -> Union[str, list, dict, int, float, bool]:
+    def _jinja2_render(
+        self, arg: Union[str, list, dict, int, float, bool], cwd: str
+    ) -> Union[str, list, dict, int, float, bool]:
         """Find and replace jinja2 variables like {{ file }}.
 
         Parameters:
@@ -677,8 +666,7 @@ class PathActionCfg:
                     item = self._jinja2_render(arg=item, cwd=cwd)
 
                 if isinstance(item, str):
-                    item = self._jinja2_render_string(string=item,
-                                                      cwd=cwd)
+                    item = self._jinja2_render_string(string=item, cwd=cwd)
 
                 result_list.append(item)
 
