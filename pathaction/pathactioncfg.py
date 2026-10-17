@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2021-2026 James Cherti
 # URL: https://github.com/jamescherti/pathaction
@@ -189,8 +189,6 @@ class ActionCommand(UserDict):
         """Retrieve attribute."""
         return self[key]
 
-    # pylint: disable=too-many-statements
-    # pylint: disable=too-many-branches
     def run(
         self, shell_path: str, timeout: float = 0, debug: bool = False
     ) -> tuple[str | list, int]:
@@ -227,11 +225,10 @@ class ActionCommand(UserDict):
             Util.pcolor(Util.COLOR_TEXT, cmd_str.replace("\n", r"\n"), prefix="[RUN] ")
 
             shell = self["shell"]
-            cwd = self["cwd"]
-
             if not isinstance(cmd, list) and not isinstance(cmd, str):
                 raise ValueError("'cmd' has to be a list or a string")
 
+            cwd = self["cwd"]
             if shell:
                 if isinstance(cmd, list):
                     cmd = subprocess.list2cmdline(cmd)
@@ -496,6 +493,7 @@ class PathActionCfg:
         self.loaded_yaml_path.append(abs_yaml_path)
         return True
 
+    # pylint: disable=too-many-try-statements
     def load_all_cfg(self, limit: int) -> list[str]:
         """Find and load all 'pathaction.yaml' files."""
         self.reset()

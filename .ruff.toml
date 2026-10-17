@@ -14,17 +14,17 @@ select = [
   "C4",  # flake8-comprehensions
   "SIM", # flake8-simplify
   "RUF", # Ruff-specific rules
-  # "PL",  # Pylint rules
+  "PL",  # Pylint rules
 ]
 
 ignore = [
   "ISC001", # Prevent conflicts with the Ruff formatter
 ]
 
-unfixable = [
-  "F401",   # Prevent auto-fixer from deleting unused imports during development
-  "F841",   # Prevent auto-fixer from deleting unused variables during development
-]
+# unfixable = [
+#   "F401",   # Prevent auto-fixer from deleting unused imports during development
+#   "F841",   # Prevent auto-fixer from deleting unused variables during development
+# ]
 
 [lint.pydocstyle]
 convention = "pep257"

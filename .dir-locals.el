@@ -57,7 +57,7 @@
 
            :pylint
            (;; Pylint
-            :enabled t
+            :enabled :json-false
             ;; :args []
             )
 
