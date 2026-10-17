@@ -495,7 +495,6 @@ class PathActionCfg:
         self.loaded_yaml_path.append(abs_yaml_path)
         return True
 
-    # pylint: disable=too-many-try-statements
     def load_all_cfg(self, limit: int) -> list[str]:
         """Find and load all 'pathaction.yaml' files."""
         self.reset()

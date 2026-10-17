@@ -28,7 +28,10 @@ disable=
     protected-access,
     fixme,
     consider-using-assignment-expr,
-    line-too-long
+    line-too-long,
+    too-many-try-statements,
+    too-many-statements,
+    too-many-branches
 
 [REPORTS]
 output-format=text
