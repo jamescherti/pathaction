@@ -100,7 +100,7 @@ class AllowedPaths:
     def load_yaml_from_string(self, stream: TextIO) -> None:
         """Load from a string that contains YAML data."""
         content = yaml.safe_load(stream)
-        self._permanently_allowed = set(map(Path, content["permanently_allowed"]))
+        self._permanently_allowed = {Path(p) for p in content["permanently_allowed"]}
 
     def save_to_yaml(self, path: str | Path) -> None:
         """Save the list of allowed paths to a YAML file.
