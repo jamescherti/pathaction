@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import mimetypes
 import os
 import pwd
@@ -30,7 +31,8 @@ import subprocess  # nosec B404
 from collections import UserDict
 from copy import copy, deepcopy
 from glob import fnmatch  # type: ignore
-from typing import Any, Optional, Union
+from pathlib import Path
+from typing import Any, ClassVar
 
 import jinja2
 import schema
@@ -63,19 +65,19 @@ class MatchMethods:
         return file_mime == string
 
     @staticmethod
-    def mimetype_match(path: str, string: str) -> Union[bool, None]:
+    def mimetype_match(path: str, string: str) -> bool | None:
         """Check if file mimetype matches using fnmatch."""
         file_mime = mimetypes.guess_type(path)[0]
         if not file_mime:
             return None
 
-        return fnmatch.fnmatch(file_mime, string)
+        return bool(fnmatch.fnmatch(file_mime, string))
 
 
 class ActionCommand(UserDict):
     """Represent a command in an action."""
 
-    match_methods = [
+    match_methods: ClassVar[list[tuple[str, Any, bool]]] = [
         (
             match_name if match_is_include else f"{match_name}_exclude",
             match_method,
@@ -93,7 +95,7 @@ class ActionCommand(UserDict):
         )
     ]
 
-    schema_qa_options = {
+    schema_qa_options: ClassVar[dict[Any, Any]] = {
         schema.Optional("shell_path"): str,
         schema.Optional("timeout"): int,
         schema.Optional("verbose"): bool,
@@ -102,30 +104,38 @@ class ActionCommand(UserDict):
         schema.Optional("last"): bool,
     }
 
-    schema_action_command = {
-        schema.Optional("tags"): schema.Or(str, [str]),
-        schema.Optional("mimetype_match"): schema.Or(str, [str]),
-        schema.Optional("mimetype_match_exclude"): schema.Or(str, [str]),
-        schema.Optional("mimetype_regex"): schema.Or(str, [str]),
-        schema.Optional("mimetype_regex_exclude"): schema.Or(str, [str]),
-        schema.Optional("mimetype"): schema.Or(str, [str]),
-        schema.Optional("mimetype_exclude"): schema.Or(str, [str]),
-        schema.Optional("path_regex"): schema.Or(str, [str]),
-        schema.Optional("path_regex_exclude"): schema.Or(str, [str]),
-        schema.Optional("path_match"): schema.Or(str, [str]),
-        schema.Optional("path_match_exclude"): schema.Or(str, [str]),
+    schema_action_command: ClassVar[dict[Any, Any]] = {
+        schema.Optional("tags"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("mimetype_match"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("mimetype_match_exclude"): schema.Or(
+            str,
+            [str],  # type: ignore
+        ),
+        schema.Optional("mimetype_regex"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("mimetype_regex_exclude"): schema.Or(
+            str,
+            [str],  # type: ignore
+        ),
+        schema.Optional("mimetype"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("mimetype_exclude"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_regex"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_regex_exclude"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_match"): schema.Or(str, [str]),  # type: ignore
+        schema.Optional("path_match_exclude"): schema.Or(str, [str]),  # type: ignore
         schema.Optional("comment"): str,
         schema.Optional("timeout"): int,
         schema.Optional("shell"): bool,
-        schema.Optional("list_commands"): [schema.Or(str, [str])],
-        schema.Optional("command"): schema.Or(str, [str]),
+        schema.Optional("list_commands"): [
+            schema.Or(str, [str])  # type: ignore
+        ],
+        schema.Optional("command"): schema.Or(str, [str]),  # type: ignore
         schema.Optional("cwd"): str,
         schema.Optional("stdout"): str,
         schema.Optional("stderr"): str,
         schema.Optional("options"): schema_qa_options,
     }
 
-    default_values = {
+    default_values: ClassVar[dict[str, Any]] = {
         "comment": "",
         "shell": False,
         "tags": "main",
@@ -142,7 +152,8 @@ class ActionCommand(UserDict):
         for item in (self.default_values, action_dict):
             self.update(deepcopy(item))
 
-        self.default_cwd = os.path.dirname(path_cfg)
+        parent = Path(path_cfg).parent
+        self.default_cwd = "" if parent == Path() else str(parent)
         self["path_cfg"] = str(jinja2_escape(path_cfg))
         if "cwd" not in self:
             self["cwd"] = self.default_cwd
@@ -182,7 +193,7 @@ class ActionCommand(UserDict):
     # pylint: disable=too-many-branches
     def run(
         self, shell_path: str, timeout: float = 0, debug: bool = False
-    ) -> tuple[Union[str, list], int]:
+    ) -> tuple[str | list, int]:
         """Execute a command.
 
         Returns:
@@ -206,11 +217,9 @@ class ActionCommand(UserDict):
                 subprocess.list2cmdline(cmd) if isinstance(cmd, list) else str(cmd)
             )
 
-            try:
+            with contextlib.suppress(KeyError):
                 # local timeout
                 timeout = self["timeout"]
-            except KeyError:
-                pass
 
             if timeout > 0:
                 Util.pcolor(Util.COLOR_TEXT, f"{timeout} seconds", prefix="[TIMEOUT] ")
@@ -241,14 +250,14 @@ class ActionCommand(UserDict):
             if timeout > 0.0:
                 kwargs["timeout"] = timeout  # type: ignore
 
-            try:
-                stdout_path: Optional[str] = None
-                stderr_path: Optional[str] = None
+            with contextlib.ExitStack() as stack:
+                stdout_path: str | None = None
+                stderr_path: str | None = None
 
-                if "stdout" in self and self["stdout"]:
+                if self.get("stdout"):
                     stdout_path = self["stdout"]
 
-                if "stderr" in self and self["stderr"]:
+                if self.get("stderr"):
                     stderr_path = self["stderr"]
 
                 if (
@@ -256,24 +265,28 @@ class ActionCommand(UserDict):
                     and stderr_path
                     and (
                         (
-                            os.path.exists(stdout_path)
-                            and os.path.samefile(stdout_path, stderr_path)
+                            Path(stdout_path).exists()
+                            and Path(stdout_path).samefile(stderr_path)
                         )
-                        or (
-                            os.path.abspath(stdout_path) == os.path.abspath(stderr_path)
-                        )
+                        or (Path(stdout_path).resolve() == Path(stderr_path).resolve())
                     )
                 ):
-                    kwargs["stdout"] = open(self["stdout"], "wb")
+                    kwargs["stdout"] = stack.enter_context(
+                        Path(self["stdout"]).open("wb")
+                    )
                     kwargs["stderr"] = kwargs["stdout"]
                     stdout_path = None
                     stderr_path = None
 
                 if stdout_path:
-                    kwargs["stdout"] = open(self["stdout"], "wb")
+                    kwargs["stdout"] = stack.enter_context(
+                        Path(self["stdout"]).open("wb")
+                    )
 
                 if stderr_path:
-                    kwargs["stderr"] = open(self["stderr"], "wb")
+                    kwargs["stderr"] = stack.enter_context(
+                        Path(self["stderr"]).open("wb")
+                    )
 
                 if shell:
                     errno = subprocess.call(
@@ -284,12 +297,6 @@ class ActionCommand(UserDict):
                     )
                 else:
                     errno = subprocess.call(cmd, **kwargs)  # type: ignore
-            finally:
-                if "stdout" in kwargs:
-                    kwargs["stdout"].close()
-
-                if "stderr" in kwargs:
-                    kwargs["stderr"].close()
 
             if errno != 0:
                 break
@@ -300,9 +307,9 @@ class ActionCommand(UserDict):
 class PathActionCfg:
     """Load rules and options from '.pathaction.yaml'."""
 
-    yaml_ext = [".yaml", ".yml"]
+    yaml_ext: ClassVar[list[str]] = [".yaml", ".yml"]
 
-    default_options = {
+    default_options: ClassVar[dict[str, Any]] = {
         "shell_path": pwd.getpwuid(os.getuid()).pw_shell,
         "confirm_after_timeout": 0,
         "debug": False,
@@ -310,7 +317,7 @@ class PathActionCfg:
         "last": False,
     }
 
-    schema_pathaction_cfg = {
+    schema_pathaction_cfg: ClassVar[dict[Any, Any]] = {
         schema.Optional("vars"): {
             schema.Optional(str): schema.Or(
                 schema.Optional(str),
@@ -342,7 +349,7 @@ class PathActionCfg:
 
     def reset(self) -> None:
         """Reset the configuration variables."""
-        self.env = deepcopy(os.environ)
+        self.env = deepcopy(dict(os.environ))
         self.loaded_yaml_path = []
         self.cfg = {
             "options": deepcopy(PathActionCfg.default_options),
@@ -353,20 +360,20 @@ class PathActionCfg:
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
         """Determine the working directory of an ActionCommand."""
         cwd = action_cmd["cwd"]
-        cwd = self._jinja2_render(cwd, cwd=action_cmd.default_cwd)
+        cwd = str(self._jinja2_render(cwd, cwd=action_cmd.default_cwd))
 
-        if os.path.isabs(cwd):
+        if Path(cwd).is_absolute():
             return str(cwd)
 
-        pathaction_path = os.path.dirname(action_cmd.path_cfg)
-        return str(os.path.abspath(os.path.join(pathaction_path, str(cwd))))
+        pathaction_path = Path(action_cmd.path_cfg).parent
+        return str((pathaction_path / str(cwd)).resolve())
 
-    def find_command(self, action_name: str) -> Union[ActionCommand, None]:
+    def find_command(self, action_name: str) -> ActionCommand | None:
         """Find command that matches the absolute path to the source code."""
-        abs_source_code = os.path.abspath(self.source_code)
+        abs_source_code = str(Path(self.source_code).resolve())
 
         is_match_found = False
-        action_cmd: Union[ActionCommand, None] = None
+        action_cmd: ActionCommand | None = None
         action_found = False
         for cur_action_cmd in self.cfg["actions"]:
             cur_action_cmd = copy(cur_action_cmd)
@@ -433,7 +440,7 @@ class PathActionCfg:
         # filters are specific to the match, like 'shebang' for
         # example)
         #
-        for key in action_cmd.keys():
+        for key in action_cmd:
             if key == "cwd":
                 continue
 
@@ -443,13 +450,13 @@ class PathActionCfg:
 
     def load_cfg(self, yaml_path: str) -> bool:
         """Merge data from the Yaml file."""
-        abs_yaml_path = os.path.abspath(yaml_path)
+        abs_yaml_path = str(Path(yaml_path).resolve())
         if abs_yaml_path in self.loaded_yaml_path:
             # already loaded
             return False
 
         try:
-            with open(abs_yaml_path, "r", encoding="utf-8") as fhandler:
+            with Path(abs_yaml_path).open(encoding="utf-8") as fhandler:
                 raw_cfg = yaml.full_load(fhandler)
         except yaml.YAMLError as err:
             err_msg = f"cannot load the YAML file '{abs_yaml_path}'. {err}"
@@ -468,7 +475,7 @@ class PathActionCfg:
                 if key == "options":
                     self.cfg["options"] = self._jinja2_render(
                         self.cfg["options"],
-                        cwd=os.path.dirname(abs_yaml_path),
+                        cwd=str(Path(abs_yaml_path).parent),
                     )
 
         if "actions" in raw_cfg:
@@ -507,7 +514,7 @@ class PathActionCfg:
         first = True
         while True:
             if first:
-                if not os.path.isdir(dirname):
+                if not Path(dirname).is_dir():
                     dirname, filename = os.path.split(dirname)
 
                 first = False
@@ -521,7 +528,7 @@ class PathActionCfg:
                 break
 
             list_pathaction_files = Util.file_ends_with(
-                os.path.join(dirname, ".pathaction"), PathActionCfg.yaml_ext
+                str(Path(dirname) / ".pathaction"), PathActionCfg.yaml_ext
             )
 
             if len(list_pathaction_files) > 1:
@@ -567,7 +574,7 @@ class PathActionCfg:
 
     def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
-        source_code = os.path.abspath(self.source_code)
+        source_code = str(Path(self.source_code).resolve())
         env = jinja2.Environment(  # nosec B701
             loader=jinja2.BaseLoader,  # type: ignore
             undefined=jinja2.StrictUndefined,
@@ -608,18 +615,18 @@ class PathActionCfg:
         env.filters["quote"] = env_filters_quote
         env.filters["startswith"] = lambda string, prefix: string.startswith(prefix)
         env.filters["endswith"] = lambda string, suffix: string.endswith(suffix)
-        env.filters["basename"] = lambda arg: os.path.basename(arg)
-        env.filters["dirname"] = lambda arg: os.path.dirname(arg)
+        env.filters["basename"] = lambda arg: Path(arg).name
+        env.filters["dirname"] = lambda arg: str(Path(arg).parent)
         env.filters["file_only_dirname"] = lambda file_path: (
-            os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+            str(Path(file_path).parent) if Path(file_path).is_file() else file_path
         )
         env.filters["realpath"] = lambda arg: os.path.realpath(arg)
-        env.filters["abspath"] = lambda arg: os.path.abspath(arg)
+        env.filters["abspath"] = lambda arg: str(Path(arg).resolve())
         env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)
-        env.filters["joinpath"] = lambda lst: os.path.join(*lst)
+        env.filters["joinpath"] = lambda lst: str(Path().joinpath(*lst))
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)
         env.filters["splitcmd"] = lambda arg: shlex.split(arg)
-        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)
+        env.filters["expanduser"] = lambda arg: str(Path(arg).expanduser())
         env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)
 
         j2_template = env.from_string(string)
@@ -627,13 +634,15 @@ class PathActionCfg:
         j2_vars: dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
         # pylint: disable=use-dict-literal
-        j2_vars.update(dict(file=source_code, env=self.env, cwd=cwd, pathsep=os.sep))
+        j2_vars.update(
+            {"file": source_code, "env": self.env, "cwd": cwd, "pathsep": os.sep}
+        )
 
         return j2_template.render(**j2_vars)
 
     def _jinja2_render(
-        self, arg: Union[str, list, dict, int, float, bool], cwd: str
-    ) -> Union[str, list, dict, int, float, bool]:
+        self, arg: str | list | dict | int | float | bool, cwd: str
+    ) -> str | list | dict | int | float | bool:
         """Find and replace jinja2 variables like {{ file }}.
 
         Parameters:
