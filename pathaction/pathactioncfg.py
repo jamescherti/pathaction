@@ -615,25 +615,25 @@ class PathActionCfg:
         env.filters["quote"] = env_filters_quote
         env.filters["startswith"] = lambda string, prefix: string.startswith(prefix)
         env.filters["endswith"] = lambda string, suffix: string.endswith(suffix)
-        env.filters["basename"] = lambda arg: Path(arg).name
-        env.filters["dirname"] = lambda arg: str(Path(arg).parent)
+        env.filters["basename"] = lambda arg: os.path.basename(arg)  # noqa: PTH119
+        env.filters["dirname"] = lambda arg: os.path.dirname(arg)  # noqa: PTH120
         env.filters["file_only_dirname"] = lambda file_path: (
-            str(Path(file_path).parent) if Path(file_path).is_file() else file_path
+            os.path.dirname(file_path) if os.path.isfile(file_path) else file_path  # noqa: PTH113, PTH120
         )
         env.filters["realpath"] = lambda arg: os.path.realpath(arg)
-        env.filters["abspath"] = lambda arg: str(Path(arg).resolve())
+        env.filters["abspath"] = lambda arg: os.path.abspath(arg)  # noqa: PTH100
         env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)
-        env.filters["joinpath"] = lambda lst: str(Path().joinpath(*lst))
+        env.filters["joinpath"] = lambda lst: os.path.join(*lst)  # noqa: PTH118
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)
         env.filters["splitcmd"] = lambda arg: shlex.split(arg)
-        env.filters["expanduser"] = lambda arg: str(Path(arg).expanduser())
+        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)  # noqa: PTH111
         env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)
 
         j2_template = env.from_string(string)
 
         j2_vars: dict[str, Any] = {}
         j2_vars.update(self.cfg["vars"])
-        # pylint: disable=use-dict-literal
+
         j2_vars.update(
             {"file": source_code, "env": self.env, "cwd": cwd, "pathsep": os.sep}
         )
