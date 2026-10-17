@@ -25,19 +25,24 @@ import select
 import signal
 import sys
 from collections.abc import Callable
-from typing import Any, Union
+from pathlib import Path
+from typing import Any
 
 try:
     from colorama import Fore, Style
 except ImportError:
 
     class Fore:  # type: ignore
+        """Provide fallback text colors."""
+
         WHITE: str = ""
         GREEN: str = ""
         RED: str = ""
         YELLOW: str = ""
 
     class Style:  # type: ignore
+        """Provide fallback text styles."""
+
         RESET_ALL: str = ""
 
 
@@ -60,22 +65,17 @@ class Util:
     @staticmethod
     def error(message: str) -> None:
         """Print an error message directly to sys.stderr."""
-        print(os.path.basename(sys.argv[0]) + ": Error: " + message, file=sys.stderr)
+        print(Path(sys.argv[0]).name + ": Error: " + message, file=sys.stderr)
 
     @staticmethod
-    def which(
-        cmd: str, cwd: Union[str, None] = None, env_path: Union[str, None] = None
-    ) -> str:
+    def which(cmd: str, cwd: str | None = None, env_path: str | None = None) -> str:
         """Return the path which conforms to the given mode on the PATH."""
-        if cwd:
-            cwd_str = os.path.abspath(cwd)
-        else:
-            cwd_str = os.getcwd()
+        cwd_str = str(Path(cwd).absolute()) if cwd else str(Path.cwd())
 
-        if not os.path.exists(cwd_str):
+        if not Path(cwd_str).exists():
             raise PathActionError(f"'{cwd_str}' does not exist")
 
-        if not os.path.isdir(cwd_str):
+        if not Path(cwd_str).is_dir():
             raise PathActionError(f"'{cwd_str}' is not a directory")
 
         cmd_path = cmd
@@ -83,13 +83,13 @@ class Util:
 
         # Check if the command has a directory component to avoid
         # string-matching bugs
-        if os.path.dirname(cmd):
-            cmd_path = os.path.normpath(os.path.join(cwd_str, cmd))
+        if cmd != Path(cmd).name:
+            cmd_path = os.path.normpath(str(Path(cwd_str) / cmd))
             relative = True
 
         if (
-            os.path.isfile(cmd_path)
-            and (relative or os.path.isabs(cmd_path))
+            Path(cmd_path).is_file()
+            and (relative or Path(cmd_path).is_absolute())
             and os.access(cmd_path, os.X_OK)
         ):
             return cmd_path
@@ -102,8 +102,8 @@ class Util:
             paths_split = []
 
         for path in paths_split:
-            cmd_path = os.path.join(path, cmd)
-            if os.path.isfile(cmd_path) and os.access(cmd_path, os.X_OK):
+            cmd_path = str(Path(path) / cmd)
+            if Path(cmd_path).is_file() and os.access(cmd_path, os.X_OK):
                 return cmd_path
 
         raise PathActionError(
@@ -113,7 +113,7 @@ class Util:
     @staticmethod
     def color(color: str, string: str = "") -> str:
         """Return text formatted with colorama styles."""
-        color_reset: Union[int, str] = Style.RESET_ALL
+        color_reset: int | str = Style.RESET_ALL
         if not Util.IS_A_TTY:
             color = ""
             color_reset = ""
@@ -160,7 +160,7 @@ class Util:
 
         if timeout > 0:
 
-            def alarm_handler(*args):
+            def alarm_handler(*args: Any) -> None:
                 """Handle the SIGALRM signal."""
                 raise TimeoutError  # pragma: no cover
 
@@ -204,7 +204,7 @@ class Util:
         result: list[str] = []
         for cur_path_suffix in path_suffixes:
             cur_file = f"{path_prefix}{cur_path_suffix}"
-            if os.path.isfile(cur_file) and cur_file not in result:
+            if Path(cur_file).is_file() and cur_file not in result:
                 result.append(cur_file)
         return result
 
@@ -214,8 +214,8 @@ class Util:
 
         Raises PathActionError if the shebang cannot be found.
         """
-        if os.path.isfile(path):
-            with open(path, "rb") as fhandler:
+        if Path(path).is_file():
+            with Path(path).open("rb") as fhandler:
                 line = fhandler.readline().lstrip()
                 if line[0:2] == b"#!":
                     return line[2:].rstrip().decode(errors="ignore")
@@ -225,8 +225,12 @@ class Util:
     @staticmethod
     def home_to_tilde(path: str) -> str:
         """Convert paths starting with user home directory into '~/path'."""
-        home = os.path.expanduser(f"~{os.sep}")
-        path_str = f"{path}{os.sep}"
-        if path_str.startswith(home):
-            return f"~{os.sep}{path_str[len(home) : -len(os.sep)]}"
+        home = str(Path("~").expanduser())
+        if home.endswith(os.sep):
+            home = home[:-1]
+
+        if path == home:
+            return "~"
+        if path.startswith(home + os.sep):
+            return f"~{os.sep}{path[len(home) + len(os.sep) :]}"
         return path
