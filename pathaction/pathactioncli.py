@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2021-2026 James Cherti
 # URL: https://github.com/jamescherti/pathaction
@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import argparse
-import os
+import contextlib
 import subprocess  # nosec B404
 import sys
 import traceback
@@ -36,6 +36,11 @@ try:
 except ImportError:
     HAS_COLORAMA = False
 
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    SETPROCTITLE = None
+
 import jinja2
 import schema
 
@@ -44,7 +49,7 @@ from .exceptions import PathActionError
 from .pathactioncfg import ActionCommand, PathActionCfg
 from .util import Util
 
-CFG_ALLOWED_DIRS = os.path.expanduser("~/.config/pathaction/permissions.yml")
+CFG_ALLOWED_DIRS = str(Path("~/.config/pathaction/permissions.yml").expanduser())
 
 
 class PathActionCli:
@@ -57,8 +62,6 @@ class PathActionCli:
             input("Press enter...")
             sys.exit(1)
 
-    # pylint: disable=too-many-statements
-    # pylint: disable=too-many-branches
     def __init__(
         self,
         require_tty: bool = False,
@@ -70,27 +73,21 @@ class PathActionCli:
         # Variables
         self.confirm_before_disabled = False
         self.tag: Any = None
-        self.args: Any = None
         self.errno = 0
         self.limit_loop = limit_loop
         self.limit_load_cfg = limit_load_cfg
+        self.pathaction_cfg: Any = None
 
         # Init
         if HAS_COLORAMA:
             colorama.init()
 
         # Optional: setproctitle
-        try:
-            # pylint: disable=import-outside-toplevel
-            from setproctitle import setproctitle
-
-            setproctitle(os.path.basename(sys.argv[0]))  # type: ignore
-        except ImportError:
-            # Optional dependency 'setproctitle' is not installed.
-            pass
+        if SETPROCTITLE:
+            setproctitle(Path(sys.argv[0]).name)
 
         # Load PathAction cfg
-        self.parse_args()
+        self.args: argparse.Namespace = self.parse_args()
 
         # Checks
         if require_tty and not sys.stdin.isatty():
@@ -100,13 +97,45 @@ class PathActionCli:
             sys.exit(1)
 
         # Allow directory
+        allowed_dirs = self._init_allowed_dirs(allowed_dirs)
+        self._handle_dir_permissions(allowed_dirs)
+
+        if not self.args.list_filenames:
+            Util.error("the following arguments are required: N")
+            self.errno = 1
+            sys.exit(1)
+
+        # Prepare
+        list_pathaction_cfg = self._prepare_pathaction_cfgs(allowed_dirs)
+
+        # Execute
+        first = True
+        for pathaction_cfg in list_pathaction_cfg:
+            self.pathaction_cfg = pathaction_cfg
+
+            self.errno = self.main()
+            if self.errno != 0:
+                break
+
+            if first:
+                first = False
+            else:
+                print()
+
+        if self.errno:
+            self.ask_user_press_enter()
+        sys.exit(self.errno)  # pragma: no cover
+
+    def _init_allowed_dirs(self, allowed_dirs: Any) -> Any:
+        """Initialize the allowed directories configuration."""
         if not allowed_dirs:
             allowed_dirs = AllowedPaths()
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 allowed_dirs.load_from_yaml(CFG_ALLOWED_DIRS)
-            except FileNotFoundError:
-                pass
+        return allowed_dirs
 
+    def _handle_dir_permissions(self, allowed_dirs: Any) -> None:
+        """Process directory permission arguments."""
         if self.args.list_allowed_dirs:
             for allowed_dir in allowed_dirs:
                 print(allowed_dir)
@@ -116,11 +145,9 @@ class PathActionCli:
             target_dir = Path(self.args.disallow_dir).resolve()
             if target_dir not in allowed_dirs.get_all():
                 print(
-                    (
-                        f"Error: The directory '{target_dir}' is not part "
-                        "of the allowed ones and cannot be disallowed for this "
-                        "reason."
-                    )
+                    f"Error: The directory '{target_dir}' is not part "
+                    "of the allowed ones and cannot be disallowed for this "
+                    "reason."
                 )
                 sys.exit(1)
             allowed_dirs.remove(target_dir)
@@ -128,23 +155,17 @@ class PathActionCli:
             print(f"Removed from allowed directories: {target_dir}")
             sys.exit(0)
 
-        if not self.args.list_filenames:
-            Util.error("the following arguments are required: N")
-            self.errno = 1
-            sys.exit(1)
-
-        # Prepare
+    def _prepare_pathaction_cfgs(self, allowed_dirs: Any) -> list[Any]:
+        """Parse configuration files and validate directories."""
         list_pathaction_cfg = []
-        first = False
-        # pylint: disable=too-many-try-statements
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = os.path.abspath(pathaction_cfg.source_code)
+                source_code = str(Path(pathaction_cfg.source_code).resolve())
 
                 if self.args.allow_dir:
-                    os.makedirs(os.path.dirname(CFG_ALLOWED_DIRS), exist_ok=True)
-                    if not os.path.isdir(source_code):
+                    Path(CFG_ALLOWED_DIRS).parent.mkdir(parents=True, exist_ok=True)
+                    if not Path(source_code).is_dir():
                         Util.error(
                             f"The path you provided is not a directory: {source_code}"
                         )
@@ -163,7 +184,7 @@ class PathActionCli:
                 if not allowed_dirs.is_allowed(source_code):
                     Util.error(
                         "The following directory is not "
-                        f"allowed: '{os.path.dirname(source_code)}'\n"
+                        f"allowed: '{Path(source_code).parent}'\n"
                         "You can allow the directory or one of its "
                         "parent directories with the command-line "
                         "option '--allow-dir'."
@@ -178,7 +199,7 @@ class PathActionCli:
                 sys.exit(1)
 
             try:
-                pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
+                pathaction_cfg.load_all_cfg(limit=self.limit_load_cfg)
             except (
                 PathActionError,
                 schema.SchemaError,
@@ -198,27 +219,11 @@ class PathActionCli:
 
             list_pathaction_cfg.append(pathaction_cfg)
 
-        # Execute
-        for pathaction_cfg in list_pathaction_cfg:
-            self.pathaction_cfg = pathaction_cfg
-
-            self.errno = self.main()
-            if self.errno != 0:
-                break
-
-            if first:
-                first = False
-            else:
-                print()
-
-        if self.errno:
-            self.ask_user_press_enter()
-        sys.exit(self.errno)  # pragma: no cover
+        return list_pathaction_cfg
 
     def main(self) -> int:
         """Run the main CLI execution loop."""
         limit_loop = self.limit_loop
-
         ask_execute_again = False
         while True:
             errno = 0
@@ -228,9 +233,8 @@ class PathActionCli:
             limit_loop -= 1
 
             try:
-                if ask_execute_again:
-                    if not self.ask_execute_again():
-                        break
+                if ask_execute_again and not self.ask_execute_again():
+                    break
 
                 self.load_cfg_files()
                 errno = self.run_from_yaml()
@@ -266,11 +270,11 @@ class PathActionCli:
 
         return errno
 
-    def parse_args(self) -> None:
+    def parse_args(self) -> argparse.Namespace:
         """Parse the command line arguments."""
         default_action = "main"
 
-        description = os.path.basename(sys.argv[0])
+        description = Path(sys.argv[0]).name
         parser = argparse.ArgumentParser(
             description=description, usage="%(prog)s [--option] filename"
         )
@@ -331,7 +335,7 @@ class PathActionCli:
             "--disallow-dir",
             type=str,
             metavar="DIR",
-            help=("Disallow pathaction from being executed in the provided directory."),
+            help="Disallow pathaction from being executed in the provided directory.",
         )
 
         parser.add_argument(
@@ -341,7 +345,7 @@ class PathActionCli:
             help="List permanently allowed directories.",
         )
 
-        self.args = parser.parse_args(sys.argv[1:])
+        return parser.parse_args(sys.argv[1:])
 
     def load_cfg_files(self) -> None:
         """Load all valid configuration files."""
@@ -349,7 +353,7 @@ class PathActionCli:
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
         source_code = Util.home_to_tilde(
-            os.path.abspath(self.pathaction_cfg.source_code)
+            str(Path(self.pathaction_cfg.source_code).resolve())
         )
 
         if self.pathaction_cfg.verbose:
@@ -400,7 +404,7 @@ class PathActionCli:
         ca_timeout = self.pathaction_cfg.cfg["options"]["confirm_after_timeout"]
         ca_timeout = max(ca_timeout, 0)
 
-        def hook_invalid_entry(_):
+        def hook_invalid_entry(_: Any) -> None:
             self.load_cfg_files()
 
         while True:
@@ -413,7 +417,6 @@ class PathActionCli:
                 question += " [a=again, n=no] "
                 answers = ["a", "n"]
 
-            # pylint: disable=too-many-try-statements
             try:
                 answer = Util.ask_question(
                     question=question,
@@ -457,8 +460,8 @@ class PathActionCli:
                 prefix="[INFO] ",
             )
             for item in self.pathaction_cfg.loaded_yaml_path:
-                item = Util.home_to_tilde(item)
-                Util.pcolor(Util.COLOR_TEXT, f"  {item}")
+                tilde_item = Util.home_to_tilde(item)
+                Util.pcolor(Util.COLOR_TEXT, f"  {tilde_item}")
 
             # Shell
             if action.shell:
@@ -498,38 +501,14 @@ class PathActionCli:
 
     def run_from_yaml(self) -> int:
         """Run the parsed command configuration."""
-        # Run the command
-        question = "Do you want to execute the command? [y,n] "
-        if self.args.confirm_before and not self.confirm_before_disabled:
-            answer = Util.ask_question(question=question, answers=["y", "n"])
-            if answer == "y":
-                self.confirm_before_disabled = True
-            else:
-                return 1
-        else:
-            Util.pcolor(Util.COLOR_TEXT, "")
+        if not self._confirm_execution():
+            return 1
 
-        if self.pathaction_cfg.debug:
-            Util.pcolor(
-                Util.COLOR_TEXT, "Run command arguments:", prefix="[RUN COMMAND] "
-            )
+        self._print_run_debug()
 
-            if "command" in self.tag:  # type: ignore
-                Util.pcolor(Util.COLOR_TEXT, "  - command: " + str(self.tag["command"]))  # type: ignore
-            if "list_commands" in self.tag:  # type: ignore
-                Util.pcolor(
-                    Util.COLOR_TEXT,
-                    "  - list commands: " + str(self.tag["list_commands"]),
-                )  # type: ignore
-            Util.pcolor(Util.COLOR_TEXT, "  - shell: " + str(self.tag.shell))  # type: ignore
-            Util.pcolor(Util.COLOR_TEXT, "  - cwd: " + str(self.tag.cwd))  # type: ignore
-
-        # Global timeout
         timeout = -1
-        try:
+        with contextlib.suppress(KeyError):
             timeout = self.pathaction_cfg.cfg["options"]["timeout"]
-        except KeyError:
-            pass
 
         # String command: use the shell
         (cmd, errno) = self.tag.run(  # type: ignore
@@ -538,7 +517,40 @@ class PathActionCli:
             debug=self.pathaction_cfg.debug,
         )
 
-        # Show the result
+        self._print_execution_result(cmd, errno)
+        return errno  # type: ignore
+
+    def _confirm_execution(self) -> bool:
+        """Ask the user to confirm execution if required."""
+        if self.args.confirm_before and not self.confirm_before_disabled:
+            question = "Do you want to execute the command? [y,n] "
+            answer = Util.ask_question(question=question, answers=["y", "n"])
+            if answer == "y":
+                self.confirm_before_disabled = True
+                return True
+            return False
+        Util.pcolor(Util.COLOR_TEXT, "")
+        return True
+
+    def _print_run_debug(self) -> None:
+        """Print debug information for the run command."""
+        if not self.pathaction_cfg.debug:
+            return
+
+        Util.pcolor(Util.COLOR_TEXT, "Run command arguments:", prefix="[RUN COMMAND] ")
+
+        if "command" in self.tag:  # type: ignore
+            Util.pcolor(Util.COLOR_TEXT, "  - command: " + str(self.tag["command"]))  # type: ignore
+        if "list_commands" in self.tag:  # type: ignore
+            Util.pcolor(
+                Util.COLOR_TEXT,
+                "  - list commands: " + str(self.tag["list_commands"]),
+            )  # type: ignore
+        Util.pcolor(Util.COLOR_TEXT, "  - shell: " + str(self.tag.shell))  # type: ignore
+        Util.pcolor(Util.COLOR_TEXT, "  - cwd: " + str(self.tag.cwd))  # type: ignore
+
+    def _print_execution_result(self, cmd: Any, errno: int) -> None:
+        """Print the result of the executed command."""
         if errno != 0:
             status = "[FAILURE] "
             status_color = Util.COLOR_ERROR
@@ -547,39 +559,36 @@ class PathActionCli:
                     subprocess.list2cmdline(cmd) if isinstance(cmd, list) else cmd
                 )
                 Util.pcolor(status_color, message)
-
             Util.pcolor(status_color, f"[EXIT-CODE] command returned {errno}")
+            return
 
-        if errno == 0:
-            status_color = Util.COLOR_SUCCESS
-            Util.pcolor(status_color, "")
-            if not self.pathaction_cfg.debug:
-                Util.pcolor(
-                    status_color, "All commands were successful.", prefix="[SUCCESS] "
-                )
-            else:
-                Util.pcolor(
-                    status_color, "All commands were successful:", prefix="[SUCCESS] "
-                )
+        status_color = Util.COLOR_SUCCESS
+        Util.pcolor(status_color, "")
+        if not self.pathaction_cfg.debug:
+            Util.pcolor(
+                status_color, "All commands were successful.", prefix="[SUCCESS] "
+            )
+        else:
+            Util.pcolor(
+                status_color, "All commands were successful:", prefix="[SUCCESS] "
+            )
 
-                if self.tag and "command" in self.tag:
-                    string = (
-                        subprocess.list2cmdline(self.tag.command)
-                        if isinstance(self.tag.command, list)
-                        else str(self.tag.command)
+            if self.tag and "command" in self.tag:
+                string = (
+                    subprocess.list2cmdline(self.tag.command)
+                    if isinstance(self.tag.command, list)
+                    else str(self.tag.command)
+                )
+                Util.pcolor(status_color, f"  {string}")
+
+            if self.tag and "list_commands" in self.tag:
+                for tag_cmd in self.tag.list_commands:
+                    Util.pcolor(
+                        status_color,
+                        "  "
+                        + (
+                            subprocess.list2cmdline(tag_cmd)
+                            if isinstance(tag_cmd, list)
+                            else str(tag_cmd)
+                        ),
                     )
-                    Util.pcolor(status_color, f"  {string}")
-
-                if self.tag and "list_commands" in self.tag:
-                    for cmd in self.tag.list_commands:
-                        Util.pcolor(
-                            status_color,
-                            "  "
-                            + (
-                                subprocess.list2cmdline(cmd)
-                                if isinstance(cmd, list)
-                                else str(cmd)
-                            ),
-                        )
-
-        return errno  # type: ignore
