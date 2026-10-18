@@ -22,6 +22,7 @@ PYTHONPATH="$(pwd)"
 
 set -e
 set -u
+set -x
 
 rm -f .coverage coverage.json
 ruff check pathaction/*.py tests/*.py
