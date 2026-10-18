@@ -51,7 +51,7 @@ from .exceptions import PathActionError
 from .pathactioncfg import ActionCommand, PathActionCfg
 from .util import Util
 
-CFG_ALLOWED_DIRS = str(Path("~/.config/pathaction/permissions.yml").expanduser())
+CFG_ALLOWED_DIRS = Path("~/.config/pathaction/permissions.yml").expanduser()
 
 
 class PathActionCli:
@@ -69,16 +69,16 @@ class PathActionCli:
         require_tty: bool = False,
         limit_loop: int = -1,
         limit_load_cfg: int = -1,
-        allowed_dirs: Any = None,
+        allowed_dirs: AllowedPaths | None = None,
     ) -> None:
         """Parse the arguments and initialize the CLI."""
         # Variables
         self.confirm_before_disabled = False
-        self.tag: Any = None
+        self.tag: ActionCommand | None = None
         self.errno = 0
         self.limit_loop = limit_loop
         self.limit_load_cfg = limit_load_cfg
-        self.pathaction_cfg: Any = None
+        self.pathaction_cfg: PathActionCfg | None = None
 
         # Init
         if HAS_COLORAMA:
@@ -128,7 +128,7 @@ class PathActionCli:
             self.ask_user_press_enter()
         sys.exit(self.errno)  # pragma: no cover
 
-    def _init_allowed_dirs(self, allowed_dirs: Any) -> Any:
+    def _init_allowed_dirs(self, allowed_dirs: AllowedPaths | None) -> AllowedPaths:
         """Initialize the allowed directories configuration."""
         if not allowed_dirs:
             allowed_dirs = AllowedPaths()
@@ -136,7 +136,7 @@ class PathActionCli:
                 allowed_dirs.load_from_yaml(CFG_ALLOWED_DIRS)
         return allowed_dirs
 
-    def _handle_dir_permissions(self, allowed_dirs: Any) -> None:
+    def _handle_dir_permissions(self, allowed_dirs: AllowedPaths) -> None:
         """Process directory permission arguments."""
         if self.args.list_allowed_dirs:
             for allowed_dir in allowed_dirs:
@@ -157,7 +157,9 @@ class PathActionCli:
             print(f"Removed from allowed directories: {target_dir}")
             sys.exit(0)
 
-    def _prepare_pathaction_cfgs(self, allowed_dirs: Any) -> list[Any]:
+    def _prepare_pathaction_cfgs(
+        self, allowed_dirs: AllowedPaths
+    ) -> list[PathActionCfg]:
         """Parse configuration files and validate directories."""
         list_pathaction_cfg = []
         for filename in self.args.list_filenames:
@@ -167,7 +169,7 @@ class PathActionCli:
                 resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:
-                    Path(CFG_ALLOWED_DIRS).parent.mkdir(parents=True, exist_ok=True)
+                    CFG_ALLOWED_DIRS.parent.mkdir(parents=True, exist_ok=True)
                     if not source_code.is_dir():
                         Util.error(
                             f"The path you provided is not a directory: {source_code}"
@@ -252,7 +254,7 @@ class PathActionCli:
                 Util.pcolor(Util.COLOR_ERROR, f"Error: {err}")
                 errno = 1
             except KeyboardInterrupt:
-                if self.pathaction_cfg.verbose:
+                if self.pathaction_cfg and self.pathaction_cfg.verbose:
                     Util.pcolor(Util.COLOR_ERROR)
                     Util.pcolor(
                         Util.COLOR_ERROR,
@@ -407,7 +409,7 @@ class PathActionCli:
         ca_timeout = self.pathaction_cfg.cfg["options"]["confirm_after_timeout"]
         ca_timeout = max(ca_timeout, 0)
 
-        def hook_invalid_entry(_: Any) -> None:
+        def hook_invalid_entry(_: str) -> None:
             self.load_cfg_files()
 
         while True:
