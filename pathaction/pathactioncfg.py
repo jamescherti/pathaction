@@ -386,7 +386,7 @@ class PathActionCfg:
         self.schema: schema.Schema = schema.Schema(PathActionCfg.schema_pathaction_cfg)
 
         # Init vars
-        self.source_code: str = os.path.normpath(source_code)
+        self.source_code: Path = Path(source_code)
 
         # The data
         self.env: dict = {}
@@ -409,19 +409,20 @@ class PathActionCfg:
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
         """Determine the working directory of an ActionCommand."""
         cwd = action_cmd["cwd"]
-        cwd = str(self._jinja2_render(cwd, cwd=action_cmd.default_cwd))
+        cwd = Path(str(self._jinja2_render(cwd, cwd=action_cmd.default_cwd)))
 
-        if Path(cwd).is_absolute():
-            return os.path.normpath(cwd)
+        if cwd.is_absolute():
+            return str(cwd)
 
         pathaction_path = Path(action_cmd.path_cfg).parent
+
         # Use os.path.abspath() instead of Path.absolute() so relative '..'
         # segments in cwd are normalized while still preserving symlinks.
         return os.path.abspath(pathaction_path / str(cwd))  # noqa: PTH100
 
     def find_command(self, action_name: str) -> ActionCommand | None:
         """Find command that matches the absolute path to the source code."""
-        abs_source_code = os.path.abspath(self.source_code)  # noqa: PTH100
+        abs_source_code = str(self.source_code.absolute())
 
         is_match_found = False
         action_cmd: ActionCommand | None = None
@@ -571,7 +572,7 @@ class PathActionCfg:
         # directories
         #
         filename = ""
-        dirname = os.path.abspath(self.source_code)  # noqa: PTH100
+        dirname = str(self.source_code.absolute())
         first = True
         while True:
             if first:
@@ -636,7 +637,7 @@ class PathActionCfg:
 
     def _jinja2_render_string(self, string: str, cwd: str) -> str:
         """Render a Jinja2 string."""
-        source_code = os.path.abspath(self.source_code)  # noqa: PTH100
+        source_code_str = str(self.source_code.absolute())
         env = jinja2.Environment(  # nosec B701
             loader=jinja2.BaseLoader,  # type: ignore
             undefined=jinja2.StrictUndefined,
@@ -711,7 +712,7 @@ class PathActionCfg:
         j2_vars.update(self.cfg["vars"])
 
         j2_vars.update(
-            {"file": source_code, "env": self.env, "cwd": cwd, "pathsep": os.sep}
+            {"file": source_code_str, "env": self.env, "cwd": cwd, "pathsep": os.sep}
         )
 
         return j2_template.render(**j2_vars)
