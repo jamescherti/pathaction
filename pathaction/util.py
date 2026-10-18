@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -83,60 +84,24 @@ class Util:
             raise PathActionError(f"'{cwd_path}' is not a directory")
 
         cmd_path = Path(cmd)
-        relative = False
+        relative = cmd != cmd_path.name
 
-        # Check if the command has a directory component to avoid
-        # string-matching bugs
-        if cmd != cmd_path.name:
-            cmd_path = cwd_path / cmd
-            relative = True
+        resolved: str | None = None
 
-        def is_executable(target: Path) -> bool:
-            """Check if a file exists and is executable across platforms."""
-            if not target.is_file():
-                return False
+        if relative or cmd_path.is_absolute():
+            target = cmd_path if cmd_path.is_absolute() else cwd_path / cmd
+            resolved = shutil.which(str(target))
+        else:
+            paths = os.environ.get("PATH", "") if env_path is None else env_path
+            resolved = shutil.which(cmd, path=paths)
 
-            if sys.platform == "win32":
-                pathexts = (
-                    os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")
-                    .upper()
-                    .split(os.pathsep)
-                )
-                return os.access(target, os.X_OK) or any(
-                    target.suffix.upper() == ext for ext in pathexts
-                )
-            return os.access(target, os.X_OK)
+        if resolved:
+            return resolved
 
-        if is_executable(cmd_path) and (relative or cmd_path.is_absolute()):
-            return str(cmd_path)
-
-        try:
-            paths = os.environ["PATH"] if env_path is None else env_path
-            paths_split = [p for p in paths.split(os.pathsep) if p]
-        except KeyError:
-            paths = ""
-            paths_split = []
-
-        if not relative and not cmd_path.is_absolute():
-            for search_path in paths_split:
-                base_candidate = Path(search_path) / cmd
-
-                if sys.platform == "win32":
-                    extensions = [
-                        "",
-                        *os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD").split(
-                            os.pathsep
-                        ),
-                    ]
-                    for ext in extensions:
-                        candidate = base_candidate.with_name(base_candidate.name + ext)
-                        if is_executable(candidate):
-                            return str(candidate)
-                elif is_executable(base_candidate):
-                    return str(base_candidate)
-
+        paths_str = os.environ.get("PATH", "") if env_path is None else env_path
         raise PathActionError(
-            f"the command '{cmd}' wasn't found in $PATH \"{paths}\" or in '{cwd_path}'."
+            f"the command '{cmd}' wasn't found in $PATH \"{paths_str}\" "
+            f"or in '{cwd_path}'."
         )
 
     @staticmethod
