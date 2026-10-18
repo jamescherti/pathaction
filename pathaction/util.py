@@ -139,10 +139,10 @@ class Util:
         """Prompt a question and wait for specific answers."""
         # Empty stdin
         if empty_stdin:
-            if sys.platform == "win32":
-                while msvcrt.kbhit():  # pragma: no cover
-                    msvcrt.getwch()  # pragma: no cover
-            else:
+            # TODO: Windows:
+            #   while msvcrt.kbhit():  # pragma: no cover
+            #       msvcrt.getwch()  # pragma: no cover
+            if sys.platform != "win32":
                 while (
                     sys.stdin
                     in select.select(
