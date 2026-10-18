@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import os
 import subprocess  # nosec B404
 import sys
 import traceback
@@ -164,12 +163,12 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = os.path.abspath(pathaction_cfg.source_code)  # noqa: PTH100
+                source_code = Path(pathaction_cfg.source_code).absolute()  # noqa: PTH100
                 resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:
                     Path(CFG_ALLOWED_DIRS).parent.mkdir(parents=True, exist_ok=True)
-                    if not Path(source_code).is_dir():
+                    if not source_code.is_dir():
                         Util.error(
                             f"The path you provided is not a directory: {source_code}"
                         )
@@ -188,7 +187,7 @@ class PathActionCli:
                 if not allowed_dirs.is_allowed(resolved_source_code):
                     Util.error(
                         "The following directory is not "
-                        f"allowed: '{Path(resolved_source_code).parent}'\n"
+                        f"allowed: '{resolved_source_code.parent}'\n"
                         "You can allow the directory or one of its "
                         "parent directories with the command-line "
                         "option '--allow-dir'."
@@ -207,8 +206,8 @@ class PathActionCli:
             except (
                 PathActionError,
                 schema.SchemaError,
-                jinja2.exceptions.TemplateSyntaxError,
-                jinja2.exceptions.UndefinedError,
+                jinja2.TemplateSyntaxError,
+                jinja2.UndefinedError,
             ) as err:
                 Util.pcolor(Util.COLOR_ERROR)
                 Util.pcolor(Util.COLOR_ERROR, f"Error: {err}")
@@ -245,8 +244,8 @@ class PathActionCli:
             except (
                 PathActionError,
                 schema.SchemaError,
-                jinja2.exceptions.TemplateSyntaxError,
-                jinja2.exceptions.UndefinedError,
+                jinja2.TemplateSyntaxError,
+                jinja2.UndefinedError,
                 subprocess.TimeoutExpired,
             ) as err:
                 Util.pcolor(Util.COLOR_ERROR)
@@ -357,7 +356,7 @@ class PathActionCli:
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
         source_code = Util.home_to_tilde(
-            os.path.abspath(self.pathaction_cfg.source_code)  # noqa: PTH100
+            str(Path(self.pathaction_cfg.source_code).absolute())
         )
 
         if self.pathaction_cfg.verbose:
