@@ -459,8 +459,9 @@ def test_pathactioncfg_jinja_extra_filters():
         "{{ '/path/to/file.txt' | realpath }}", cwd=anchor
     ) == str(Path("/path/to/file.txt").resolve())
 
+    executable = sys.executable.replace("\\", "\\\\")
     assert pathactioncfg._jinja2_render(
-        "{{ '" + sys.executable + "' | which }}", cwd=anchor
+        "{{ '" + executable + "' | which }}", cwd=anchor
     ) == shutil.which(sys.executable)
 
     with pytest.raises(FileNotFoundError):
