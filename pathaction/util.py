@@ -21,12 +21,16 @@
 from __future__ import annotations
 
 import os
-import select
-import signal
 import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import select
+    import signal
 
 try:
     from colorama import Fore, Style
@@ -70,29 +74,41 @@ class Util:
     @staticmethod
     def which(cmd: str, cwd: str | None = None, env_path: str | None = None) -> str:
         """Return the path which conforms to the given mode on the PATH."""
-        cwd_str = os.path.abspath(cwd) if cwd else str(Path.cwd())  # noqa: PTH100
+        cwd_path = Path(cwd).absolute() if cwd else Path.cwd()
 
-        if not Path(cwd_str).exists():
-            raise PathActionError(f"'{cwd_str}' does not exist")
+        if not cwd_path.exists():
+            raise PathActionError(f"'{cwd_path}' does not exist")
 
-        if not Path(cwd_str).is_dir():
-            raise PathActionError(f"'{cwd_str}' is not a directory")
+        if not cwd_path.is_dir():
+            raise PathActionError(f"'{cwd_path}' is not a directory")
 
-        cmd_path = cmd
+        cmd_path = Path(cmd)
         relative = False
 
         # Check if the command has a directory component to avoid
         # string-matching bugs
-        if cmd != Path(cmd).name:
-            cmd_path = os.path.normpath(str(Path(cwd_str) / cmd))
+        if cmd != cmd_path.name:
+            cmd_path = cwd_path / cmd
             relative = True
 
-        if (
-            Path(cmd_path).is_file()
-            and (relative or Path(cmd_path).is_absolute())
-            and os.access(cmd_path, os.X_OK)
-        ):
-            return cmd_path
+        def is_executable(target: Path) -> bool:
+            """Check if a file exists and is executable across platforms."""
+            if not target.is_file():
+                return False
+
+            if sys.platform == "win32":
+                pathexts = (
+                    os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")
+                    .upper()
+                    .split(os.pathsep)
+                )
+                return os.access(target, os.X_OK) or any(
+                    target.suffix.upper() == ext for ext in pathexts
+                )
+            return os.access(target, os.X_OK)
+
+        if is_executable(cmd_path) and (relative or cmd_path.is_absolute()):
+            return str(cmd_path)
 
         try:
             paths = os.environ["PATH"] if env_path is None else env_path
@@ -101,46 +117,56 @@ class Util:
             paths = ""
             paths_split = []
 
-        if not relative and not Path(cmd_path).is_absolute():
-            for path in paths_split:
-                candidate_path = str(Path(path) / cmd)
-                if Path(candidate_path).is_file() and os.access(
-                    candidate_path, os.X_OK
-                ):
-                    return candidate_path
+        if not relative and not cmd_path.is_absolute():
+            for search_path in paths_split:
+                base_candidate = Path(search_path) / cmd
+
+                if sys.platform == "win32":
+                    extensions = [
+                        "",
+                        *os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD").split(
+                            os.pathsep
+                        ),
+                    ]
+                    for ext in extensions:
+                        candidate = base_candidate.with_name(base_candidate.name + ext)
+                        if is_executable(candidate):
+                            return str(candidate)
+                elif is_executable(base_candidate):
+                    return str(base_candidate)
 
         raise PathActionError(
-            f"the command '{cmd}' wasn't found in $PATH \"{paths}\" or in '{cwd_str}'."
+            f"the command '{cmd}' wasn't found in $PATH \"{paths}\" or in '{cwd_path}'."
         )
 
     @staticmethod
-    def color(color: str, string: str = "") -> str:
+    def color(text_color: str, string: str = "") -> str:
         """Return text formatted with colorama styles."""
         color_reset: int | str = Style.RESET_ALL
         if not Util.IS_A_TTY:
-            color = ""
+            text_color = ""
             color_reset = ""
-        return f"{color}{string}{color_reset}"
+        return f"{text_color}{string}{color_reset}"
 
     @staticmethod
     def pcolor(
-        color: str,
+        text_color: str,
         string: str = "",
         prefix: str = "",
         file: Any = sys.stderr,
         **kwargs: Any,
     ) -> str:
         """Print a colored string with an optional prefix."""
-        colored_text = Util.color(color, string)
-        prefix = Util.color(Util.COLOR_HIGHLIGHT, prefix)
-        result = f"{prefix}{colored_text}"
+        colored_text = Util.color(text_color, string)
+        prefix_str = Util.color(Util.COLOR_HIGHLIGHT, prefix)
+        result = f"{prefix_str}{colored_text}"
         print(result, file=file, **kwargs)
         return result
 
     @staticmethod
     def ask_question(
         question: str,
-        answers: list,
+        answers: list[str],
         timeout: int = 0,
         hook_invalid_entry: Callable = lambda _: None,
         empty_stdin: bool = True,
@@ -148,20 +174,24 @@ class Util:
         """Prompt a question and wait for specific answers."""
         # Empty stdin
         if empty_stdin:
-            while (
-                sys.stdin
-                in select.select(
-                    [sys.stdin],  # pragma: no cover
-                    [],  # pragma: no cover
-                    [],  # pragma: no cover
-                    0,
-                )[0]
-            ):  # pragma: no cover
-                line = sys.stdin.readline()  # pragma: no cover
-                if not line:  # pragma: no cover
-                    break  # pragma: no cover
+            if sys.platform == "win32":
+                while msvcrt.kbhit():  # pragma: no cover
+                    msvcrt.getwch()  # pragma: no cover
+            else:
+                while (
+                    sys.stdin
+                    in select.select(
+                        [sys.stdin],  # pragma: no cover
+                        [],  # pragma: no cover
+                        [],  # pragma: no cover
+                        0,
+                    )[0]
+                ):  # pragma: no cover
+                    line = sys.stdin.readline()  # pragma: no cover
+                    if not line:  # pragma: no cover
+                        break  # pragma: no cover
 
-        if timeout > 0:
+        if timeout > 0 and sys.platform != "win32":
 
             def alarm_handler(*args: Any) -> None:
                 """Handle the SIGALRM signal."""
@@ -193,7 +223,7 @@ class Util:
                 answer = ""  # pragma: no cover
                 hook_invalid_entry(answer)
         finally:
-            if timeout > 0:
+            if timeout > 0 and sys.platform != "win32":
                 signal.alarm(0)  # cancel the alarm
 
     @staticmethod
@@ -217,8 +247,9 @@ class Util:
 
         Raises PathActionError if the shebang cannot be found.
         """
-        if Path(path).is_file():
-            with Path(path).open("rb") as fhandler:
+        file_path = Path(path)
+        if file_path.is_file():
+            with file_path.open("rb") as fhandler:
                 line = fhandler.readline().lstrip()
                 if line[0:2] == b"#!":
                     return line[2:].rstrip().decode(errors="ignore")
