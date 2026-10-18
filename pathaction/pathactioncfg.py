@@ -24,15 +24,19 @@ import contextlib
 import fnmatch
 import mimetypes
 import os
-import pwd
 import re
 import shlex
 import shutil
 import subprocess  # nosec B404
+import sys
 from collections import UserDict
 from copy import copy, deepcopy
 from pathlib import Path
 from typing import Any, ClassVar
+
+if sys.platform != "win32":
+    import pwd
+
 
 import jinja2
 import schema
@@ -40,6 +44,13 @@ import yaml  # type: ignore
 
 from .exceptions import PathActionError
 from .util import Util
+
+
+def _get_default_shell() -> str:
+    """Return default shell path for the current platform."""
+    if sys.platform == "win32":
+        return os.environ.get("COMSPEC", "cmd.exe")
+    return pwd.getpwuid(os.getuid()).pw_shell
 
 
 class MatchMethods:
@@ -259,7 +270,11 @@ class ActionCommand(UserDict):
                 if isinstance(cmd, list):
                     cmd = subprocess.list2cmdline(cmd)
             else:
-                cmd = shlex.split(cmd) if isinstance(cmd, str) else deepcopy(cmd)
+                cmd = (
+                    shlex.split(cmd, posix=(sys.platform != "win32"))
+                    if isinstance(cmd, str)
+                    else deepcopy(cmd)
+                )
                 if not cmd:
                     raise PathActionError("the command is empty.")
 
@@ -335,7 +350,7 @@ class PathActionCfg:
     yaml_ext: ClassVar[list[str]] = [".yaml", ".yml"]
 
     default_options: ClassVar[dict[str, Any]] = {
-        "shell_path": pwd.getpwuid(os.getuid()).pw_shell,
+        "shell_path": _get_default_shell(),
         "confirm_after_timeout": 0,
         "debug": False,
         "verbose": False,
@@ -521,7 +536,11 @@ class PathActionCfg:
             self.cfg["actions"] = new_actions
 
         # Checks
-        if not os.access(self.cfg["options"]["shell_path"], os.X_OK):
+        shell_target = (
+            shutil.which(self.cfg["options"]["shell_path"])
+            or self.cfg["options"]["shell_path"]
+        )
+        if not os.access(shell_target, os.X_OK):
             err_msg = (
                 f"the shell '{self.cfg['options']['shell_path']}' "
                 "does not exist or is not an executable."
@@ -617,9 +636,16 @@ class PathActionCfg:
 
         # pylint: disable=unnecessary-lambda
         env.filters["shebang"] = lambda arg: Util.read_shebang(arg)  # noqa: PLW0108
-        env.filters["shebang_list"] = lambda arg: shlex.split(Util.read_shebang(arg))
+        env.filters["shebang_list"] = lambda arg: shlex.split(
+            Util.read_shebang(arg), posix=(sys.platform != "win32")
+        )
         env.filters["shebang_quote"] = lambda arg: subprocess.list2cmdline(
-            [shlex.quote(item) for item in shlex.split(Util.read_shebang(arg))]
+            [
+                shlex.quote(item)
+                for item in shlex.split(
+                    Util.read_shebang(arg), posix=(sys.platform != "win32")
+                )
+            ]
         )
 
         def env_filters_quote(arg):
@@ -666,7 +692,9 @@ class PathActionCfg:
         env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)  # noqa: PLW0108
         env.filters["joinpath"] = lambda lst: os.path.join(*lst)  # noqa: PTH118
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
-        env.filters["splitcmd"] = lambda arg: shlex.split(arg)  # noqa: PLW0108
+        env.filters["splitcmd"] = lambda arg: shlex.split(
+            arg, posix=(sys.platform != "win32")
+        )
         env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)  # noqa: PTH111, PLW0108
         env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)  # noqa: PLW0108
 
