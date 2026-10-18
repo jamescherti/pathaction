@@ -18,7 +18,6 @@
 #
 """Test the class AllowedPaths()."""
 
-import tempfile
 from pathlib import Path
 
 from pathaction.allowed_paths import AllowedPaths
@@ -30,7 +29,7 @@ def test_allowed_paths_repr():
     """Test the string representation of AllowedPaths."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
-    assert str(QA_BASEDIR.resolve()) in str(allowed_paths)
+    assert str(QA_BASEDIR.resolve()) in str(allowed_paths).replace("\\\\", "\\")
 
 
 def test_allowed_paths_add_and_get_all():
@@ -76,25 +75,20 @@ def test_allowed_paths_dump_and_load_yaml_from_string():
     assert allowed_paths2._temporarily_allowed == set()
 
 
-def test_allowed_paths_save_and_load_yaml_from_file():
+def test_allowed_paths_save_and_load_yaml_from_file(tmp_path: Path):
     """Test saving and loading allowed paths from a YAML file."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
     allowed_paths.add(QA_BASEDIR / "case1", permanent=False)
 
-    tmp_path = None
-    try:
-        _, tmp_path = tempfile.mkstemp(prefix="pathaction", suffix=".test")
+    yaml_file = tmp_path / "allowed.yaml"
 
-        allowed_paths2 = AllowedPaths()
-        allowed_paths.save_to_yaml(tmp_path)
-        allowed_paths2.load_from_yaml(tmp_path)
-    finally:
-        if tmp_path:
-            Path(tmp_path).unlink()
+    allowed_paths2 = AllowedPaths()
+    allowed_paths.save_to_yaml(yaml_file)
+    allowed_paths2.load_from_yaml(yaml_file)
 
-        assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
-        assert allowed_paths2._temporarily_allowed == set()
+    assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
+    assert allowed_paths2._temporarily_allowed == set()
 
 
 def test_allowed_paths_is_allowed():
