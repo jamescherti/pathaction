@@ -4,11 +4,11 @@ actions:
   - path_match: "*"
     shell: true
     tags: main
-    command: 'PYTHONPATH=".:$PYTHONPATH" pytest -v -v --cov-report=term --cov-report=html:htmlcov tests/*'
+    command: './run_tests.sh'
 
   - path_match: "*"
     shell: true
     tags: install
     list_commands:
-      - 'PYTHONPATH=".:$PYTHONPATH" pytest -v -v --cov-report=term --cov-report=html:htmlcov tests/*'
+      - './run_tests.sh'
       - "if [[ $VIRTUAL_ENV != '' ]]; then pip install .; else pip install --user .; fi"
