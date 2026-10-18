@@ -17,7 +17,8 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-export PYTHONPATH=".:$PYTHONPATH"
+export PYTHONPATH
+PYTHONPATH="$(pwd)"
 
 set -e
 set -u
