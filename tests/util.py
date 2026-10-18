@@ -20,7 +20,7 @@
 
 import importlib.util
 import os
-import tempfile
+import sys
 from pathlib import Path
 
 import pytest
@@ -36,32 +36,34 @@ HAS_COLORAMA: bool = importlib.util.find_spec("colorama") is not None
 
 def test_util_which():
     """Test Util.which()."""
+    executable = sys.executable
+    exec_name = Path(executable).name
+    exec_dir = str(Path(executable).parent)
+
     with pytest.raises(PathActionError):
-        Util.which("does_not_exist")
+        Util.which("does_not_exist_ever_123")
 
-    assert Util.which("/bin/sh") == "/bin/sh"
-
-    assert Util.which("sh", env_path="/bin") == "/bin/sh"
+    assert Util.which(executable) == executable
+    assert Util.which(exec_name, env_path=exec_dir) == executable
 
     with pytest.raises(PathActionError):
         del os.environ["PATH"]
-        Util.which("sh")
+        Util.which("does_not_exist_ever_123")
 
-    assert Util.which("./sh", cwd="/bin", env_path="") == "/bin/sh"
-
-    with pytest.raises(PathActionError):
-        Path(Util.which("./bin", cwd="/", env_path=""))
+    assert Util.which(f".{os.sep}{exec_name}", cwd=exec_dir, env_path="") == executable
 
     with pytest.raises(PathActionError):
-        Path(Util.which("bin", cwd="/", env_path="/"))
+        Path(Util.which(f".{os.sep}{exec_name}", cwd="/", env_path=""))
 
     with pytest.raises(PathActionError):
-        Util.which("sh", cwd="/bin", env_path="")
+        Path(Util.which(exec_name, cwd="/", env_path="/"))
+
+    with pytest.raises(PathActionError):
+        Util.which(exec_name, cwd="/", env_path="")
 
     cwd = Path.cwd()
-    os.chdir("/bin")
-    new_cwd = Path.cwd()
-    assert Util.which("./sh", env_path="") == str(new_cwd / "sh")
+    os.chdir(exec_dir)
+    assert Util.which(f".{os.sep}{exec_name}", env_path="") == executable
     os.chdir(cwd)
 
 
@@ -88,40 +90,27 @@ def test_util_pcolor():
         )
 
 
-def test_util_file_ends_with():
+def test_util_file_ends_with(tmp_path: Path):
     """Test Util.file_ends_with()."""
-    tmp_path = None
-    try:
-        _, tmp_path = tempfile.mkstemp(prefix="prefix", suffix=".yaml")
-        tmpdir = Path(tmp_path).parent
-        tmpname = Path(tmp_path).name[0:-5]
-        assert Util.file_ends_with(
-            path_prefix=tmpdir.joinpath(tmpname), path_suffixes=[".yaml", ".yml"]
-        ) == [str(tmpdir.joinpath(tmpname + ".yaml"))]
-    finally:
-        if tmp_path:
-            Path(tmp_path).unlink()
+    yaml_file = tmp_path / "prefix.yaml"
+    yaml_file.write_text("test", encoding="utf-8")
+    assert Util.file_ends_with(str(tmp_path / "prefix"), [".yaml", ".yml"]) == [
+        str(yaml_file)
+    ]
 
 
-def test_util_read_shebang():
+def test_util_read_shebang(tmp_path: Path):
     """Test Util.read_shebang()."""
-    tmp_path = None
-    try:
-        _, tmp_path = tempfile.mkstemp(prefix="test_read_shebang", suffix=".sh")
-        # There is NO shebang
-        with Path(tmp_path).open("w", encoding="utf-8") as fhandler:
-            fhandler.write("echo 'Hello world'")
-        with pytest.raises(PathActionError):
-            Util.read_shebang(tmp_path)
+    sh_file = tmp_path / "test.sh"
 
-        # There is a shebang
-        with Path(tmp_path).open("w", encoding="utf-8") as fhandler:
-            fhandler.write("#!/usr/bin/env /bin/test" + os.linesep)
-            fhandler.write("echo 'Hello world'")
-        assert Util.read_shebang(tmp_path) == "/usr/bin/env /bin/test"
-    finally:
-        if tmp_path:
-            Path(tmp_path).unlink()
+    # There is NO shebang
+    sh_file.write_text("echo 'Hello'", encoding="utf-8")
+    with pytest.raises(PathActionError):
+        Util.read_shebang(str(sh_file))
+
+    # There is a shebang
+    sh_file.write_text("#!/usr/bin/env /bin/test\necho 'Hello'", encoding="utf-8")
+    assert Util.read_shebang(str(sh_file)) == "/usr/bin/env /bin/test"
 
 
 def test_util_ask_question():
@@ -153,7 +142,7 @@ def test_util_ask_question():
 
 def test_util_home_to_tilde():
     """Test Util.home_to_tilde()."""
-    assert Util.home_to_tilde(str(Path("~/test").expanduser())) == "~/test"
+    assert Util.home_to_tilde(str(Path("~/test").expanduser())) == f"~{os.sep}test"
 
 
 def test_util_which_invalid_cwd(tmp_path: Path):
