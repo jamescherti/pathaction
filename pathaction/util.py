@@ -224,12 +224,10 @@ class Util:
     @staticmethod
     def home_to_tilde(path: str) -> str:
         """Convert paths starting with user home directory into '~/path'."""
-        home = str(Path("~").expanduser())
-        if home.endswith(os.sep):
-            home = home[:-1]
-
-        if path == home:
+        target_path = Path(path)
+        home_path = Path.home()
+        if target_path == home_path:
             return "~"
-        if path.startswith(home + os.sep):
-            return f"~{os.sep}{path[len(home) + len(os.sep) :]}"
+        if target_path.is_relative_to(home_path):
+            return f"~{os.sep}{target_path.relative_to(home_path)}"
         return path
