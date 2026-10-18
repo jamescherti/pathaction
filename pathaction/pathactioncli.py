@@ -163,7 +163,7 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = Path(pathaction_cfg.source_code).absolute()
+                source_code = pathaction_cfg.source_code.absolute()
                 resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:
@@ -356,7 +356,7 @@ class PathActionCli:
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
         source_code = Util.home_to_tilde(
-            str(Path(self.pathaction_cfg.source_code).absolute())
+            str(self.pathaction_cfg.source_code.absolute())
         )
 
         if self.pathaction_cfg.verbose:
