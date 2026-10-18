@@ -46,11 +46,20 @@ from .exceptions import PathActionError
 from .util import Util
 
 
-def _get_default_shell() -> str:
+def get_default_shell() -> str:
     """Return default shell path for the current platform."""
     if sys.platform == "win32":
         return os.environ.get("COMSPEC", "cmd.exe")
+
     return pwd.getpwuid(os.getuid()).pw_shell
+
+
+def platform_quote(text: str) -> str:
+    """Return a shell-escaped version of the string for the current platform."""
+    if sys.platform == "win32":
+        return subprocess.list2cmdline([text])
+
+    return shlex.quote(text)
 
 
 class MatchMethods:
@@ -350,7 +359,7 @@ class PathActionCfg:
     yaml_ext: ClassVar[list[str]] = [".yaml", ".yml"]
 
     default_options: ClassVar[dict[str, Any]] = {
-        "shell_path": _get_default_shell(),
+        "shell_path": get_default_shell(),
         "confirm_after_timeout": 0,
         "debug": False,
         "verbose": False,
@@ -639,20 +648,18 @@ class PathActionCfg:
         env.filters["shebang_list"] = lambda arg: shlex.split(
             Util.read_shebang(arg), posix=(sys.platform != "win32")
         )
-        env.filters["shebang_quote"] = lambda arg: subprocess.list2cmdline(
-            [
-                shlex.quote(item)
-                for item in shlex.split(
-                    Util.read_shebang(arg), posix=(sys.platform != "win32")
-                )
-            ]
+        env.filters["shebang_quote"] = lambda arg: " ".join(
+            platform_quote(item)
+            for item in shlex.split(
+                Util.read_shebang(arg), posix=(sys.platform != "win32")
+            )
         )
 
         def env_filters_quote(arg):
             if isinstance(arg, list):
                 return [
                     (
-                        shlex.quote(str(item))
+                        platform_quote(str(item))
                         if isinstance(item, (str, int, float))
                         and not isinstance(item, bool)
                         else item
@@ -663,7 +670,7 @@ class PathActionCfg:
             # Use isinstance() (excluding bool) instead of type(arg) in [...]
             # so string subclasses are supported and booleans are rejected.
             if isinstance(arg, (str, int, float)) and not isinstance(arg, bool):
-                return shlex.quote(str(arg))
+                return platform_quote(str(arg))
 
             raise ValueError(f"quote: invalid type: {arg}")
 
