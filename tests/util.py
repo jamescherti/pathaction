@@ -47,8 +47,12 @@ def test_util_which():
     assert Util.which(exec_name, env_path=exec_dir) == executable
 
     with pytest.raises(PathActionError):
-        del os.environ["PATH"]
-        Util.which("does_not_exist_ever_123")
+        path = os.environ["PATH"]
+        try:
+            del os.environ["PATH"]
+            Util.which("does_not_exist_ever_123")
+        finally:
+            os.environ["PATH"] = path
 
     assert Util.which(f".{os.sep}{exec_name}", cwd=exec_dir, env_path="") == executable
 
