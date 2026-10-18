@@ -21,10 +21,12 @@
 import importlib.util
 import os
 import tempfile
-import unittest.mock
 from pathlib import Path
 
 import pytest
+from prompt_toolkit.application import create_app_session
+from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.output import DummyOutput
 
 from pathaction.exceptions import PathActionError
 from pathaction.util import Util
@@ -124,7 +126,11 @@ def test_util_read_shebang():
 
 def test_util_ask_question():
     """Test Util.ask_question()."""
-    with unittest.mock.patch("builtins.input", return_value="y"):
+    with (
+        create_pipe_input() as pipe_input,
+        create_app_session(input=pipe_input, output=DummyOutput()),
+    ):
+        pipe_input.send_text("y\n")
         assert (
             Util.ask_question(
                 question="Question? ", answers=["y", "n"], timeout=1, empty_stdin=False
@@ -132,10 +138,14 @@ def test_util_ask_question():
             == "y"
         )
 
-    with unittest.mock.patch("builtins.input", return_value="n"):
+    with (
+        create_pipe_input() as pipe_input,
+        create_app_session(input=pipe_input, output=DummyOutput()),
+    ):
+        pipe_input.send_text("n\n")
         assert (
             Util.ask_question(
-                question="Question? ", answers=["a", "n"], empty_stdin=False
+                question="Question? ", answers=["a", "n"], empty_stdin=True
             )
             == "n"
         )
@@ -166,7 +176,11 @@ def test_util_read_shebang_missing_file(tmp_path: Path):
 def test_util_ask_question_invalid_entry_hook():
     """Test Util.ask_question() invoking hook_invalid_entry on invalid input."""
     hook_calls = []
-    with unittest.mock.patch("builtins.input", side_effect=["invalid", "y"]):
+    with (
+        create_pipe_input() as pipe_input,
+        create_app_session(input=pipe_input, output=DummyOutput()),
+    ):
+        pipe_input.send_text("invalid\ny\n")
         answer = Util.ask_question(
             question="Question? ",
             answers=["y", "n"],

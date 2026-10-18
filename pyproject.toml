@@ -35,6 +35,7 @@ classifiers = [
 dependencies = [
   "jinja2",
   "markupsafe",
+  "prompt-toolkit",
   "PyYAML",
   "schema",
 ]
