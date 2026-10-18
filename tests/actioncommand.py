@@ -122,7 +122,7 @@ def test_actioncommand_run_errors():
         path_cfg="", action_dict={"command": sys.executable}
     )
     invalid_type_cmd["command"] = 123  # type: ignore[assignment]
-    with pytest.raises(ValueError, match="'cmd' has to be a list or a string"):
+    with pytest.raises(TypeError, match="'cmd' has to be a list or a string"):
         invalid_type_cmd.run(shell_path=sys.executable)
 
 

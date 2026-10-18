@@ -273,7 +273,7 @@ class ActionCommand(UserDict):
 
             shell = self["shell"]
             if not isinstance(cmd, list) and not isinstance(cmd, str):
-                raise ValueError("'cmd' has to be a list or a string")
+                raise TypeError("'cmd' has to be a list or a string")
 
             cwd = self["cwd"]
             if shell:
@@ -669,18 +669,30 @@ class PathActionCfg:
             if isinstance(arg, (str, int, float)) and not isinstance(arg, bool):
                 return platform_quote(str(arg))
 
-            raise ValueError(f"quote: invalid type: {arg}")
+            raise TypeError(f"quote: invalid type: {arg}")
 
         def env_filters_which(cmd_str: Any) -> str:
-            if isinstance(cmd_str, str):
-                path_command = shutil.which(cmd_str)
-                if not path_command:
-                    err_str = f"which: command not found: {cmd_str}"
-                    raise FileNotFoundError(err_str)
+            """
+            Return the absolute path to an executable command.
 
-                return path_command
+            Args:
+                cmd_str: The command or full path to the executable.
 
-            raise ValueError(f"which: invalid type: {cmd_str}")
+            Returns:
+                The absolute path to the executable.
+
+            Raises:
+                TypeError: If cmd_str is not a string.
+                FileNotFoundError: If the command cannot be located.
+            """
+            if not isinstance(cmd_str, str):
+                raise TypeError(f"invalid type: {cmd_str}")
+
+            path_command = shutil.which(cmd_str)
+            if not path_command:
+                raise FileNotFoundError(f"which: command not found: {cmd_str}")
+
+            return path_command
 
         env.filters["which"] = env_filters_which
         env.filters["quote"] = env_filters_quote

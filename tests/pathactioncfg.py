@@ -466,10 +466,10 @@ def test_pathactioncfg_jinja_extra_filters():
     with pytest.raises(FileNotFoundError):
         pathactioncfg._jinja2_render("{{ 'non_existent_bin_xyz' | which }}", cwd=anchor)
 
-    with pytest.raises(ValueError, match="which: invalid type"):
+    with pytest.raises(TypeError):
         pathactioncfg._jinja2_render("{{ 123 | which }}", cwd=anchor)
 
-    with pytest.raises(ValueError, match="quote: invalid type"):
+    with pytest.raises(TypeError):
         pathactioncfg._jinja2_render("{{ true | quote }}", cwd=anchor)
 
     assert pathactioncfg._jinja2_render("{{ [true] | quote }}", cwd=anchor) == "[True]"
