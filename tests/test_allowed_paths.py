@@ -22,7 +22,7 @@ from pathlib import Path
 
 from pathaction.allowed_paths import AllowedPaths
 
-QA_BASEDIR = Path("./tests/pathactioncfg_cases")
+QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 
 
 def test_allowed_paths_repr():

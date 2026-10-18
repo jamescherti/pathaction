@@ -34,7 +34,7 @@ from pathaction.util import Util
 HAS_COLORAMA: bool = importlib.util.find_spec("colorama") is not None
 
 
-def test_util_which():
+def test_util_which(monkeypatch: pytest.MonkeyPatch):
     """Test Util.which()."""
     executable = sys.executable
     exec_name = Path(executable).name
@@ -46,13 +46,9 @@ def test_util_which():
     assert Util.which(executable) == executable
     assert Util.which(exec_name, env_path=exec_dir) == executable
 
+    monkeypatch.delenv("PATH", raising=False)
     with pytest.raises(PathActionError):
-        path = os.environ["PATH"]
-        try:
-            del os.environ["PATH"]
-            Util.which("does_not_exist_ever_123")
-        finally:
-            os.environ["PATH"] = path
+        Util.which("does_not_exist_ever_123")
 
     assert Util.which(f".{os.sep}{exec_name}", cwd=exec_dir, env_path="") == executable
 
@@ -65,26 +61,23 @@ def test_util_which():
     with pytest.raises(PathActionError):
         Util.which(exec_name, cwd="/", env_path="")
 
-    cwd = Path.cwd()
-    os.chdir(exec_dir)
+    monkeypatch.chdir(exec_dir)
     assert Util.which(f".{os.sep}{exec_name}", env_path="") == executable
-    os.chdir(cwd)
 
 
-def test_util_color() -> None:
+def test_util_color(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test Util.color()."""
-    Util.IS_A_TTY = True
-
+    monkeypatch.setattr(Util, "IS_A_TTY", True)
     expected_color_string: str = "\x1b[32mTest\x1b[0m" if HAS_COLORAMA else "Test"
     assert Util.color(color=Util.COLOR_SUCCESS, string="Test") == expected_color_string
 
-    Util.IS_A_TTY = False
+    monkeypatch.setattr(Util, "IS_A_TTY", False)
     assert Util.color(color=Util.COLOR_SUCCESS, string="Test") == "Test"
 
 
-def test_util_pcolor():
+def test_util_pcolor(monkeypatch: pytest.MonkeyPatch):
     """Test Util.pcolor()."""
-    Util.IS_A_TTY = False
+    monkeypatch.setattr(Util, "IS_A_TTY", False)
     with Path(os.devnull).open("w", encoding="utf-8") as devnull:
         assert (
             Util.pcolor(
