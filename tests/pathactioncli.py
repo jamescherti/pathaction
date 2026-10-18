@@ -93,3 +93,113 @@ def test_pathactioncli_error_between_2_successful_files(allowed_dirs: AllowedPat
             PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == EXIT_CODE_NH
+
+
+def test_pathactioncli_no_filenames(allowed_dirs: AllowedPaths):
+    """Test CLI exit code when no filenames are passed."""
+    with (
+        patch.object(sys, "argv", [sys.argv[0]]),
+        pytest.raises(SystemExit) as exitinfo,
+    ):
+        PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
+    assert exitinfo.value.code == 1
+
+
+def test_pathactioncli_require_tty(allowed_dirs: AllowedPaths):
+    """Test CLI exit code when require_tty is True and stdin is not a TTY."""
+    argv = [sys.argv[0], str(QA_BASEDIR.joinpath("case1", "file.py"))]
+    with (
+        patch.object(sys, "argv", argv),
+        patch.object(sys.stdin, "isatty", return_value=False),
+        pytest.raises(SystemExit) as exitinfo,
+    ):
+        PathActionCli(
+            require_tty=True,
+            limit_loop=1,
+            limit_load_cfg=1,
+            allowed_dirs=allowed_dirs,
+        )
+    assert exitinfo.value.code == 1
+
+
+def test_pathactioncli_dir_permission_flags(tmp_path: Path):
+    """Test --allow-dir, --list-allowed-dirs, --disallow-dir, and --list flags."""
+    cfg_file = tmp_path / "permissions.yml"
+    allowed_dirs = AllowedPaths()
+    target_dir = QA_BASEDIR / "case1"
+    target_file = target_dir / "file.py"
+
+    with patch("pathaction.pathactioncli.CFG_ALLOWED_DIRS", str(cfg_file)):
+        # --allow-dir on a file (should fail with exit code 1)
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--allow-dir", str(target_file)]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 1
+
+        # --allow-dir on a valid directory (should succeed with exit code 0)
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--allow-dir", str(target_dir)]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 0
+
+        # --list-allowed-dirs (should succeed with exit code 0)
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--list-allowed-dirs"]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 0
+
+        # --list configuration files
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--list", str(target_file)]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(limit_load_cfg=1, allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 0
+
+        # --disallow-dir on an allowed directory (should succeed with exit code 0)
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--disallow-dir", str(target_dir)]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 0
+
+        # --disallow-dir on a directory not in allowed_dirs (should fail with 1)
+        with (
+            patch.object(sys, "argv", [sys.argv[0], "--disallow-dir", str(target_dir)]),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 1
+
+
+def test_pathactioncli_confirm_before_and_after(allowed_dirs: AllowedPaths):
+    """Test --confirm-before and --confirm-after interactive flows."""
+    target_file = str(QA_BASEDIR.joinpath("case1", "file.py"))
+
+    # --confirm-before declined ("n")
+    with (
+        patch.object(sys, "argv", [sys.argv[0], "-b", target_file]),
+        patch("pathaction.util.Util.ask_question", return_value="n"),
+        pytest.raises(SystemExit) as exitinfo,
+    ):
+        PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
+    assert exitinfo.value.code == 1
+
+    # --confirm-before accepted ("y") and --confirm-after ("t" then "n")
+    with (
+        patch.object(sys, "argv", [sys.argv[0], "-b", "-a", target_file]),
+        patch(
+            "pathaction.util.Util.ask_question",
+            side_effect=["y", "t", "n"],
+        ),
+        pytest.raises(SystemExit) as exitinfo,
+    ):
+        PathActionCli(limit_loop=2, limit_load_cfg=1, allowed_dirs=allowed_dirs)
+    assert exitinfo.value.code == 0

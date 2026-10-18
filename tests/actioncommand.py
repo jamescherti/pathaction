@@ -84,3 +84,59 @@ def test_actioncommand_run_commands():
         [str(Util.which("true"))],
         0,
     )
+
+
+def test_actioncommand_getattr():
+    """Test attribute lookup and AttributeError on ActionCommand."""
+    action_command = ActionCommand(
+        path_cfg=".pathaction.yaml", action_dict={"command": "true"}
+    )
+    assert action_command.command == "true"
+    with pytest.raises(AttributeError):
+        _ = action_command.non_existent_attribute
+
+
+def test_actioncommand_invalid_regex_list():
+    """Test ActionCommand initialization with an invalid regex in a list."""
+    with pytest.raises(PathActionError):
+        ActionCommand(
+            path_cfg=".pathaction.yaml",
+            action_dict={"command": "true", "path_regex_exclude": ["[invalid"]},
+        )
+
+
+def test_actioncommand_run_errors():
+    """Test error conditions in ActionCommand.run()."""
+    action_command = ActionCommand(path_cfg="", action_dict={})
+    with pytest.raises(PathActionError):
+        action_command.run(shell_path=Util.which("sh"))
+
+    empty_cmd = ActionCommand(path_cfg="", action_dict={"command": ""})
+    with pytest.raises(PathActionError):
+        empty_cmd.run(shell_path=Util.which("sh"))
+
+    invalid_type_cmd = ActionCommand(path_cfg="", action_dict={"command": "true"})
+    invalid_type_cmd["command"] = 123  # type: ignore[assignment]
+    with pytest.raises(ValueError, match="'cmd' has to be a list or a string"):
+        invalid_type_cmd.run(shell_path=Util.which("sh"))
+
+
+def test_actioncommand_run_shell_list_and_timeout():
+    """Test running multiple commands with shell=True, timeout, and debug."""
+    action_dict = {
+        "list_commands": [["true"], ["true"]],
+        "cwd": "/",
+        "shell": True,
+        "timeout": 5,
+    }
+    action_command = ActionCommand(path_cfg="", action_dict=action_dict)
+    assert action_command.run(shell_path=Util.which("sh"), debug=True) == (
+        "true",
+        0,
+    )
+
+    del action_command["timeout"]
+    assert action_command.run(shell_path=Util.which("sh"), timeout=0, debug=True) == (
+        "true",
+        0,
+    )

@@ -144,3 +144,40 @@ def test_util_ask_question():
 def test_util_home_to_tilde():
     """Test Util.home_to_tilde()."""
     assert Util.home_to_tilde(str(Path("~/test").expanduser())) == "~/test"
+
+
+def test_util_which_invalid_cwd(tmp_path: Path):
+    """Test Util.which() when cwd does not exist or is not a directory."""
+    with pytest.raises(PathActionError):
+        Util.which("sh", cwd=str(tmp_path / "non_existent_dir"))
+
+    file_path = tmp_path / "some_file"
+    file_path.write_text("", encoding="utf-8")
+    with pytest.raises(PathActionError):
+        Util.which("sh", cwd=str(file_path))
+
+
+def test_util_read_shebang_missing_file(tmp_path: Path):
+    """Test Util.read_shebang() when the file does not exist."""
+    with pytest.raises(PathActionError):
+        Util.read_shebang(str(tmp_path / "does_not_exist.sh"))
+
+
+def test_util_ask_question_invalid_entry_hook():
+    """Test Util.ask_question() invoking hook_invalid_entry on invalid input."""
+    hook_calls = []
+    with unittest.mock.patch("builtins.input", side_effect=["invalid", "y"]):
+        answer = Util.ask_question(
+            question="Question? ",
+            answers=["y", "n"],
+            hook_invalid_entry=hook_calls.append,
+            empty_stdin=False,
+        )
+    assert answer == "y"
+    assert len(hook_calls) == 1
+
+
+def test_util_home_to_tilde_edge_cases():
+    """Test Util.home_to_tilde() with exact home path and non-home path."""
+    assert Util.home_to_tilde(str(Path("~").expanduser())) == "~"
+    assert Util.home_to_tilde("/tmp/other_path") == "/tmp/other_path"
