@@ -437,11 +437,6 @@ class PathActionCfg:
                 )
 
                 for pattern in list_patterns:
-                    # Fix cwd after Jinja2 is rendered.
-                    # This part has to be interpreter after Jinja2 render
-                    # (check above)
-                    cur_action_cmd["cwd"] = self.get_action_cmd_cwd(cur_action_cmd)
-
                     pattern = self._jinja2_render(pattern, cwd=cur_action_cmd.cwd)
 
                     if match_method(abs_source_code, str(pattern)):

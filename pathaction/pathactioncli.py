@@ -144,7 +144,7 @@ class PathActionCli:
             sys.exit(0)
 
         if self.args.disallow_dir:
-            target_dir = Path(self.args.disallow_dir).absolute()
+            target_dir = Path(self.args.disallow_dir).resolve()
             if target_dir not in allowed_dirs.get_all():
                 print(
                     f"Error: The directory '{target_dir}' is not part "
@@ -164,6 +164,7 @@ class PathActionCli:
             try:
                 pathaction_cfg = PathActionCfg(filename)
                 source_code = str(Path(pathaction_cfg.source_code).absolute())
+                resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:
                     Path(CFG_ALLOWED_DIRS).parent.mkdir(parents=True, exist_ok=True)
@@ -175,18 +176,18 @@ class PathActionCli:
                         self.ask_user_press_enter()
                         sys.exit(1)
 
-                    allowed_dirs.add(source_code, permanent=True)
+                    allowed_dirs.add(resolved_source_code, permanent=True)
                     allowed_dirs.save_to_yaml(CFG_ALLOWED_DIRS)
                     print(
                         "The directory has been permanently added to the "
-                        f"allow list: {source_code}"
+                        f"allow list: {resolved_source_code}"
                     )
                     sys.exit(0)
 
-                if not allowed_dirs.is_allowed(source_code):
+                if not allowed_dirs.is_allowed(resolved_source_code):
                     Util.error(
                         "The following directory is not "
-                        f"allowed: '{Path(source_code).parent}'\n"
+                        f"allowed: '{Path(resolved_source_code).parent}'\n"
                         "You can allow the directory or one of its "
                         "parent directories with the command-line "
                         "option '--allow-dir'."
