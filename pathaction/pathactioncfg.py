@@ -409,16 +409,20 @@ class PathActionCfg:
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
         """Determine the working directory of an ActionCommand."""
         cwd = action_cmd["cwd"]
-        cwd = Path(str(self._jinja2_render(cwd, cwd=action_cmd.default_cwd)))
+        cwd_rendered = Path(
+            str(self._jinja2_render(cwd, cwd=str(action_cmd.default_cwd)))
+        )
 
-        if cwd.is_absolute():
-            return str(cwd)
+        if cwd_rendered.is_absolute():
+            # os.path.normpath is needed here to squash any '..' segments
+            # that might exist in the absolute path.
+            return os.path.normpath(cwd_rendered)
 
         pathaction_path = Path(action_cmd.path_cfg).parent
 
         # Use os.path.abspath() instead of Path.absolute() so relative '..'
         # segments in cwd are normalized while still preserving symlinks.
-        return os.path.abspath(pathaction_path / str(cwd))  # noqa: PTH100
+        return os.path.abspath(pathaction_path / cwd_rendered)  # noqa: PTH100
 
     def find_command(self, action_name: str) -> ActionCommand | None:
         """Find command that matches the absolute path to the source code."""
