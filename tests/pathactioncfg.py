@@ -403,6 +403,7 @@ def test_pathactioncfg_stdout_stderr(tmp_path: Path):
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
     actioncommand = pathactioncfg.find_command("main")
+    assert actioncommand is not None
 
     def mock_call(cmd, **kwargs):
         if kwargs.get("stdout"):
