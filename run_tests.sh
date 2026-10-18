@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 #
 # Copyright (C) 2021-2026 James Cherti
 # URL: https://github.com/jamescherti/pathaction
@@ -17,11 +17,10 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-set -e
 export PYTHONPATH=".:$PYTHONPATH"
-set -u
+
 rm -f .coverage coverage.json
 ruff check pathaction/*.py tests/*.py
-mypy pathaction/*py tests/*py
+mypy pathaction/*.py tests/*.py
 python -m pytest -p no:libtmux -v --cov=. --cov-report=term-missing \
   --cov-report=json tests/*

@@ -56,5 +56,5 @@ jobs:
           pip install .[test,colors,proctitle]
 
       - name: Run tests
-        shell: bash
-        run: bash run_tests.sh
+        shell: sh
+        run: sh run_tests.sh
