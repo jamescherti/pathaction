@@ -48,66 +48,67 @@ def test_pathactioncfg_jinja_render():
     # FILE: file.py
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
+    anchor = str(Path.cwd().anchor)
 
     # var: file
     # pylint: disable=protected-access
-    assert pathactioncfg._jinja2_render("{{ file }}", cwd="/") == str(
+    assert pathactioncfg._jinja2_render("{{ file }}", cwd=anchor) == str(
         source_code.absolute()
     )
 
     # var: pathsep (type: string)
-    assert pathactioncfg._jinja2_render("{{ pathsep }}", cwd="/") == os.path.sep
+    assert pathactioncfg._jinja2_render("{{ pathsep }}", cwd=anchor) == os.path.sep
 
     # var: pathsep (type: list)
-    assert pathactioncfg._jinja2_render(["{{ pathsep }}"], cwd="/") == [os.path.sep]
+    assert pathactioncfg._jinja2_render(["{{ pathsep }}"], cwd=anchor) == [os.path.sep]
 
     # var: pathsep (type: list)
     assert pathactioncfg._jinja2_render(
-        {"{{ pathsep }}": "{{ pathsep }}"}, cwd="/"
+        {"{{ pathsep }}": "{{ pathsep }}"}, cwd=anchor
     ) == {"{{ pathsep }}": os.path.sep}
 
     # var: cwd
-    assert pathactioncfg._jinja2_render("{{ cwd }}", cwd="/") == "/"
+    assert pathactioncfg._jinja2_render("{{ cwd }}", cwd=anchor) == anchor
 
     # var: cwd (2)
-    assert pathactioncfg._jinja2_render(["{{ cwd }}"], cwd="/") == ["/"]
+    assert pathactioncfg._jinja2_render(["{{ cwd }}"], cwd=anchor) == [anchor]
 
     # method: shebang
     assert (
-        pathactioncfg._jinja2_render("{{ file | shebang }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ file | shebang }}", cwd=anchor)
         == "/usr/bin/env python"
     )
 
     # method: quote (string)
     string = r"te'st"
     assert pathactioncfg._jinja2_render(
-        '{{ "te\'st" | quote }}', cwd="/"
+        '{{ "te\'st" | quote }}', cwd=anchor
     ) == platform_quote(string)
 
     # method: quote (int)
     assert pathactioncfg._jinja2_render(
-        "{{ 1024 | quote }}", cwd="/"
+        "{{ 1024 | quote }}", cwd=anchor
     ) == platform_quote(str(1024))
 
     # method: quote (float)
     assert pathactioncfg._jinja2_render(
-        "{{ 1024.123 | quote }}", cwd="/"
+        "{{ 1024.123 | quote }}", cwd=anchor
     ) == platform_quote(str(1024.123))
 
     # method: quote list (string)
     string = r"te'st"
     assert pathactioncfg._jinja2_render(
-        r"""{{ (["te'st", 255] | quote)[0] }}""", cwd="/"
+        r"""{{ (["te'st", 255] | quote)[0] }}""", cwd=anchor
     ) == platform_quote(string)
 
     # method: quote list (number)
     assert pathactioncfg._jinja2_render(
-        r"""{{ (["te'st", 255] | quote)[1] }}""", cwd="/"
+        r"""{{ (["te'st", 255] | quote)[1] }}""", cwd=anchor
     ) == platform_quote(str(255))
 
     # method: basename
     assert (
-        pathactioncfg._jinja2_render("{{ '/path/to/file.txt' | basename }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ '/path/to/file.txt' | basename }}", cwd=anchor)
         == Path(r"/path/to/file.txt").name
     )
 
@@ -115,7 +116,7 @@ def test_pathactioncfg_jinja_render():
     assert (
         pathactioncfg._jinja2_render(
             "{{ 'true' if ('/path/to/file.txt' | startswith('/path')) else 'false' }}",
-            cwd="/",
+            cwd=anchor,
         )
         == "true"
     )
@@ -125,45 +126,45 @@ def test_pathactioncfg_jinja_render():
         pathactioncfg._jinja2_render(
             "{{ 'true' if ('/path/to/file.txt' | endswith('/file.txt')) "
             "else 'false' }}",
-            cwd="/",
+            cwd=anchor,
         )
         == "true"
     )
 
     # method: dirname
     assert pathactioncfg._jinja2_render(
-        "{{ '/path/to/file.txt' | dirname }}", cwd="/"
+        "{{ '/path/to/file.txt' | dirname }}", cwd=anchor
     ) == str(Path(r"/path/to/file.txt").parent)
 
     assert pathactioncfg._jinja2_render(
-        "{{ file | relpath }}", cwd="/"
+        "{{ file | relpath }}", cwd=anchor
     ) == os.path.relpath(source_code)
 
     # method: abspath
     assert pathactioncfg._jinja2_render(
-        "{{ '/path/to/file.txt' | abspath }}", cwd="/"
+        "{{ '/path/to/file.txt' | abspath }}", cwd=anchor
     ) == str(Path(r"/path/to/file.txt").resolve())
 
     # method: joinpath
     assert pathactioncfg._jinja2_render(
-        "{{ ['/path', 'to', 'file.txt'] | joinpath }}", cwd="/"
+        "{{ ['/path', 'to', 'file.txt'] | joinpath }}", cwd=anchor
     ) == str(Path("/path") / "to" / "file.txt")
 
     # method: joincmd
     assert pathactioncfg._jinja2_render(
-        "{{ ['cp', '/file', '/file2'] | joincmd }}", cwd="/"
+        "{{ ['cp', '/file', '/file2'] | joincmd }}", cwd=anchor
     ) == subprocess.list2cmdline(["cp", "/file", "/file2"])
 
     # method: expanduser
-    assert pathactioncfg._jinja2_render("{{ '~/file' | expanduser }}", cwd="/") == str(
-        Path("~/file").expanduser()
-    )
+    assert pathactioncfg._jinja2_render(
+        "{{ '~/file' | expanduser }}", cwd=anchor
+    ) == str(Path("~/file").expanduser())
 
     # method: expandvars
     if "TEST" not in os.environ:
         os.environ["TEST"] = "TEST RESULT"
     assert pathactioncfg._jinja2_render(
-        "{{ '$TEST' | expandvars }}", cwd="/"
+        "{{ '$TEST' | expandvars }}", cwd=anchor
     ) == os.path.expandvars("$TEST")
 
     # method: file_dirname
@@ -171,7 +172,7 @@ def test_pathactioncfg_jinja_render():
         Path(
             pathactioncfg._jinja2_render(
                 "{{ file | file_only_dirname }}",
-                cwd="/",
+                cwd=anchor,
             )
         ).name
         == "case1"
@@ -182,7 +183,7 @@ def test_pathactioncfg_jinja_render():
         Path(
             pathactioncfg._jinja2_render(
                 "{{ file | dirname | file_only_dirname }}",
-                cwd="/",
+                cwd=anchor,
             )
         ).name
         == "case1"
@@ -425,7 +426,7 @@ def test_pathactioncfg_stdout_stderr(tmp_path: Path):
             actioncommand["stdout"] = str(tmp_stdout)
             actioncommand["stderr"] = str(tmp_stderr)
 
-            assert actioncommand.run("mock_shell")
+            assert actioncommand.run(sys.executable)
 
             if not use_same_file:
                 with tmp_stdout.open(encoding="utf-8") as fhandler:
@@ -444,47 +445,54 @@ def test_pathactioncfg_jinja_extra_filters():
     """Test shebang_list, shebang_quote, realpath, which, and quote errors."""
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
+    anchor = str(Path.cwd().anchor)
 
     # pylint: disable=protected-access
-    assert pathactioncfg._jinja2_render("{{ file | shebang_list }}", cwd="/") == str(
+    assert pathactioncfg._jinja2_render("{{ file | shebang_list }}", cwd=anchor) == str(
         ["/usr/bin/env", "python"]
     )
     assert (
-        pathactioncfg._jinja2_render("{{ file | shebang_quote }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ file | shebang_quote }}", cwd=anchor)
         == "/usr/bin/env python"
     )
     assert pathactioncfg._jinja2_render(
-        "{{ '/path/to/file.txt' | realpath }}", cwd="/"
+        "{{ '/path/to/file.txt' | realpath }}", cwd=anchor
     ) == str(Path("/path/to/file.txt").resolve())
 
     assert pathactioncfg._jinja2_render(
-        "{{ '" + sys.executable + "' | which }}", cwd="/"
+        "{{ '" + sys.executable + "' | which }}", cwd=anchor
     ) == shutil.which(sys.executable)
 
     with pytest.raises(FileNotFoundError):
-        pathactioncfg._jinja2_render("{{ 'non_existent_bin_xyz' | which }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ 'non_existent_bin_xyz' | which }}", cwd=anchor)
 
     with pytest.raises(ValueError, match="which: invalid type"):
-        pathactioncfg._jinja2_render("{{ 123 | which }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ 123 | which }}", cwd=anchor)
 
     with pytest.raises(ValueError, match="quote: invalid type"):
-        pathactioncfg._jinja2_render("{{ true | quote }}", cwd="/")
+        pathactioncfg._jinja2_render("{{ true | quote }}", cwd=anchor)
 
-    assert pathactioncfg._jinja2_render("{{ [true] | quote }}", cwd="/") == "[True]"
+    assert pathactioncfg._jinja2_render("{{ [true] | quote }}", cwd=anchor) == "[True]"
 
 
 def test_pathactioncfg_jinja_nested_structures():
     """Test _jinja2_render with nested lists, dicts, and non-string scalars."""
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
+    anchor = str(Path.cwd().anchor)
 
     # pylint: disable=protected-access
-    assert pathactioncfg._jinja2_render({"key": ["{{ cwd }}"], "num": 42}, cwd="/") == {
-        "key": ["/"],
+    assert pathactioncfg._jinja2_render(
+        {"key": ["{{ cwd }}"], "num": 42}, cwd=anchor
+    ) == {
+        "key": [anchor],
         "num": 42,
     }
-    assert pathactioncfg._jinja2_render([["{{ cwd }}"], 42], cwd="/") == [["/"], 42]
-    assert pathactioncfg._jinja2_render(42, cwd="/") == 42  # noqa: PLR2004
+    assert pathactioncfg._jinja2_render([["{{ cwd }}"], 42], cwd=anchor) == [
+        [anchor],
+        42,
+    ]
+    assert pathactioncfg._jinja2_render(42, cwd=anchor) == 42  # noqa: PLR2004
 
 
 def test_pathactioncfg_exclude_rules():
@@ -501,7 +509,7 @@ def test_pathactioncfg_exclude_rules():
             action_dict={
                 "path_match": "*.py",
                 "path_match_exclude": "*file.py",
-                "command": "false",
+                "command": "not_executed_mock",
                 "cwd": "test_dir",
             },
         ),
@@ -509,14 +517,14 @@ def test_pathactioncfg_exclude_rules():
             path_cfg=str(QA_BASEDIR / "case1" / ".pathaction.yaml"),
             action_dict={
                 "path_match": "*.py",
-                "command": "true",
+                "command": sys.executable,
                 "cwd": "test_dir",
             },
         ),
     ]
     actioncommand = pathactioncfg.find_command("main")
     assert actioncommand is not None
-    assert actioncommand["command"] == "true"
+    assert actioncommand["command"] == sys.executable
     assert actioncommand["cwd"] == str(
         QA_BASEDIR.joinpath("case1", "test_dir").resolve()
     )
@@ -527,18 +535,20 @@ def test_pathactioncfg_option_last(tmp_path: Path):
     parent_cfg = tmp_path / ".pathaction.yaml"
     parent_cfg.write_text(
         "vars:\n  parent_var: '1'\nactions:\n  - path_match: '*'\n    "
-        "command: 'true'\n",
+        "command: 'mock_cmd'\n",
         encoding="utf-8",
     )
     sub_dir = tmp_path / "sub"
     sub_dir.mkdir()
     child_cfg = sub_dir / ".pathaction.yaml"
     child_cfg.write_text(
-        "options:\n  last: true\nactions:\n  - path_match: '*'\n    command: 'true'\n",
+        "options:\n  last: true\nactions:\n  - path_match: '*'\n    "
+        "command: 'mock_cmd'\n",
         encoding="utf-8",
     )
 
     pathactioncfg = PathActionCfg(source_code=str(sub_dir / "test.py"))
     loaded = pathactioncfg.load_all_cfg(limit=2)
     assert loaded == [str(child_cfg.resolve())]
+    assert "parent_var" not in pathactioncfg.cfg["vars"]
     assert "parent_var" not in pathactioncfg.cfg["vars"]

@@ -20,6 +20,7 @@
 
 import sys
 from collections import UserDict
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -32,7 +33,7 @@ from pathaction.util import Util
 def test_actioncommand_exclusive_command():
     """Test mutually exclusive command options in ActionCommand."""
     path_cfg = ".pathaction.yaml"
-    action_dict = {"list_commands": ["true"], "command": "true"}
+    action_dict = {"list_commands": [sys.executable], "command": sys.executable}
     with pytest.raises(PathActionError):
         ActionCommand(path_cfg=path_cfg, action_dict=action_dict)
 
@@ -40,7 +41,7 @@ def test_actioncommand_exclusive_command():
 def test_actioncommand_schema():
     """Test the ActionCommand schema and default values."""
     path_cfg = ".pathaction.yaml"
-    action_dict = {"list_commands": ["true"]}
+    action_dict = {"list_commands": [sys.executable]}
     actioncommand = ActionCommand(path_cfg=path_cfg, action_dict=action_dict)
 
     default_values = ActionCommand.default_values.copy()
@@ -57,14 +58,14 @@ def test_actioncommand_run_list_commands():
     action_dict = {
         "list_commands": [[sys.executable, "-c", "pass"]],
         "comment": "",
-        "cwd": "/",
+        "cwd": str(Path.cwd().anchor),
         "tags": "main",
         "shell": False,
     }
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
     action_dict["path_cfg"] = ""
     assert action_command == action_dict
-    assert action_command.run(shell_path="sh", timeout=0) == (
+    assert action_command.run(shell_path=sys.executable, timeout=0) == (
         [str(Util.which(sys.executable)), "-c", "pass"],
         0,
     )
@@ -75,14 +76,14 @@ def test_actioncommand_run_commands():
     action_dict = {
         "command": [sys.executable, "-c", "pass"],
         "comment": "",
-        "cwd": "/",
+        "cwd": str(Path.cwd().anchor),
         "tags": "main",
         "shell": False,
     }
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
     action_dict["path_cfg"] = ""
     assert action_command == action_dict
-    assert action_command.run(shell_path="sh", timeout=0) == (
+    assert action_command.run(shell_path=sys.executable, timeout=0) == (
         [str(Util.which(sys.executable)), "-c", "pass"],
         0,
     )
@@ -91,9 +92,9 @@ def test_actioncommand_run_commands():
 def test_actioncommand_getattr():
     """Test attribute lookup and AttributeError on ActionCommand."""
     action_command = ActionCommand(
-        path_cfg=".pathaction.yaml", action_dict={"command": "true"}
+        path_cfg=".pathaction.yaml", action_dict={"command": sys.executable}
     )
-    assert action_command.command == "true"
+    assert action_command.command == sys.executable
     with pytest.raises(AttributeError):
         _ = action_command.non_existent_attribute
 
@@ -103,7 +104,7 @@ def test_actioncommand_invalid_regex_list():
     with pytest.raises(PathActionError):
         ActionCommand(
             path_cfg=".pathaction.yaml",
-            action_dict={"command": "true", "path_regex_exclude": ["[invalid"]},
+            action_dict={"command": sys.executable, "path_regex_exclude": ["[invalid"]},
         )
 
 
@@ -117,7 +118,9 @@ def test_actioncommand_run_errors():
     with pytest.raises(PathActionError):
         empty_cmd.run(shell_path=sys.executable)
 
-    invalid_type_cmd = ActionCommand(path_cfg="", action_dict={"command": "true"})
+    invalid_type_cmd = ActionCommand(
+        path_cfg="", action_dict={"command": sys.executable}
+    )
     invalid_type_cmd["command"] = 123  # type: ignore[assignment]
     with pytest.raises(ValueError, match="'cmd' has to be a list or a string"):
         invalid_type_cmd.run(shell_path=sys.executable)
@@ -126,18 +129,21 @@ def test_actioncommand_run_errors():
 def test_actioncommand_run_shell_list_and_timeout():
     """Test running multiple commands with shell=True, timeout, and debug."""
     action_dict = {
-        "list_commands": [["true"], ["true"]],
-        "cwd": "/",
+        "list_commands": [
+            [sys.executable, "-c", "pass"],
+            [sys.executable, "-c", "pass"],
+        ],
+        "cwd": str(Path.cwd().anchor),
         "shell": True,
         "timeout": 5,
     }
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
 
     with patch("subprocess.call", return_value=0):
-        _, errno = action_command.run(shell_path="sh", debug=True)
+        _, errno = action_command.run(shell_path=sys.executable, debug=True)
         assert errno == 0
 
     del action_command["timeout"]
     with patch("subprocess.call", return_value=0):
-        _, errno = action_command.run(shell_path="sh", timeout=0, debug=True)
+        _, errno = action_command.run(shell_path=sys.executable, timeout=0, debug=True)
         assert errno == 0
