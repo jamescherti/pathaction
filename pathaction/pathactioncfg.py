@@ -379,7 +379,7 @@ class PathActionCfg:
         self.cfg = {
             "options": deepcopy(PathActionCfg.default_options),
             "vars": {},
-            "actions": {},
+            "actions": [],
         }
 
     def get_action_cmd_cwd(self, action_cmd: ActionCommand) -> str:
