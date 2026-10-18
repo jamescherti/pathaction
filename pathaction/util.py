@@ -70,7 +70,7 @@ class Util:
     @staticmethod
     def which(cmd: str, cwd: str | None = None, env_path: str | None = None) -> str:
         """Return the path which conforms to the given mode on the PATH."""
-        cwd_str = str(Path(cwd).absolute()) if cwd else str(Path.cwd())
+        cwd_str = os.path.abspath(cwd) if cwd else str(Path.cwd())  # noqa: PTH100
 
         if not Path(cwd_str).exists():
             raise PathActionError(f"'{cwd_str}' does not exist")
@@ -95,16 +95,19 @@ class Util:
             return cmd_path
 
         try:
-            paths = env_path if env_path else os.environ["PATH"]
-            paths_split = paths.split(os.pathsep)
+            paths = os.environ["PATH"] if env_path is None else env_path
+            paths_split = [p for p in paths.split(os.pathsep) if p]
         except KeyError:
             paths = ""
             paths_split = []
 
-        for path in paths_split:
-            cmd_path = str(Path(path) / cmd)
-            if Path(cmd_path).is_file() and os.access(cmd_path, os.X_OK):
-                return cmd_path
+        if not relative and not Path(cmd_path).is_absolute():
+            for path in paths_split:
+                candidate_path = str(Path(path) / cmd)
+                if Path(candidate_path).is_file() and os.access(
+                    candidate_path, os.X_OK
+                ):
+                    return candidate_path
 
         raise PathActionError(
             f"the command '{cmd}' wasn't found in $PATH \"{paths}\" or in '{cwd_str}'."
