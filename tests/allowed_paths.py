@@ -16,25 +16,25 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
-"""Test the class AllowedPaths()"""
+"""Test the class AllowedPaths()."""
 
-import os
 import tempfile
 from pathlib import Path
 
-import yaml
 from pathaction.allowed_paths import AllowedPaths
 
 QA_BASEDIR = Path("./tests/pathactioncfg_cases")
 
 
 def test_allowed_paths_repr():
+    """Test the string representation of AllowedPaths."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
     assert str(QA_BASEDIR.resolve()) in str(allowed_paths)
 
 
 def test_allowed_paths_add_and_get_all():
+    """Test adding paths and retrieving all allowed paths."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
     allowed_paths.add(QA_BASEDIR, permanent=False)
@@ -50,6 +50,7 @@ def test_allowed_paths_add_and_get_all():
 
 
 def test_allowed_paths_remove():
+    """Test removing paths from AllowedPaths."""
     allowed_paths = AllowedPaths()
 
     allowed_paths.add(QA_BASEDIR, permanent=True)
@@ -63,6 +64,7 @@ def test_allowed_paths_remove():
 
 
 def test_allowed_paths_dump_and_load_yaml_from_string():
+    """Test dumping and loading allowed paths from a YAML string."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
     allowed_paths.add(QA_BASEDIR / "case1", permanent=False)
@@ -75,6 +77,7 @@ def test_allowed_paths_dump_and_load_yaml_from_string():
 
 
 def test_allowed_paths_save_and_load_yaml_from_file():
+    """Test saving and loading allowed paths from a YAML file."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR, permanent=True)
     allowed_paths.add(QA_BASEDIR / "case1", permanent=False)
@@ -88,13 +91,14 @@ def test_allowed_paths_save_and_load_yaml_from_file():
         allowed_paths2.load_from_yaml(tmp_path)
     finally:
         if tmp_path:
-            os.remove(tmp_path)
+            Path(tmp_path).unlink()
 
         assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
         assert allowed_paths2._temporarily_allowed == set()
 
 
 def test_allowed_paths_is_allowed():
+    """Test checking whether a path is allowed."""
     allowed_paths = AllowedPaths()
     allowed_paths.add(QA_BASEDIR / "case1", permanent=False)
 

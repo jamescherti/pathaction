@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
-"""Test the class PathActionCfg()"""
+"""Test the class PathActionCfg()."""
 
 import os
 import shlex
@@ -34,15 +34,17 @@ QA_BASEDIR = Path("./tests/pathactioncfg_cases")
 
 
 def test_pathactioncfg_cwd_in_cwd():
+    """Test using the cwd variable inside the cwd option."""
     source_code = QA_BASEDIR.joinpath("case1", "file3.nh")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
     actioncommand = pathactioncfg.find_command("main")
-    assert os.path.basename(actioncommand["cwd"]) == "test_cwd"
-    assert os.path.basename(os.path.dirname(actioncommand["cwd"])) == "case1"
+    assert Path(actioncommand["cwd"]).name == "test_cwd"
+    assert Path(actioncommand["cwd"]).parent.name == "case1"
 
 
 def test_pathactioncfg_jinja_render():
+    """Test rendering Jinja2 templates and filters in PathActionCfg."""
     # FILE: file.py
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
@@ -111,9 +113,10 @@ def test_pathactioncfg_jinja_render():
     ) == shlex.quote(str(255))
 
     # method: basename
-    assert pathactioncfg._jinja2_render(
-        "{{ '/path/to/file.txt' | basename }}", cwd="/"
-    ) == os.path.basename(r"/path/to/file.txt")
+    assert (
+        pathactioncfg._jinja2_render("{{ '/path/to/file.txt' | basename }}", cwd="/")
+        == Path(r"/path/to/file.txt").name
+    )
 
     # startswith(string)
     assert (
@@ -127,7 +130,8 @@ def test_pathactioncfg_jinja_render():
     # endsswith(string)
     assert (
         pathactioncfg._jinja2_render(
-            "{{ 'true' if ('/path/to/file.txt' | endswith('/file.txt')) else 'false' }}",
+            "{{ 'true' if ('/path/to/file.txt' | endswith('/file.txt')) "
+            "else 'false' }}",
             cwd="/",
         )
         == "true"
@@ -136,7 +140,7 @@ def test_pathactioncfg_jinja_render():
     # method: dirname
     assert pathactioncfg._jinja2_render(
         "{{ '/path/to/file.txt' | dirname }}", cwd="/"
-    ) == os.path.dirname(r"/path/to/file.txt")
+    ) == str(Path(r"/path/to/file.txt").parent)
 
     assert pathactioncfg._jinja2_render(
         "{{ file | relpath }}", cwd="/"
@@ -145,12 +149,12 @@ def test_pathactioncfg_jinja_render():
     # method: abspath
     assert pathactioncfg._jinja2_render(
         "{{ '/path/to/file.txt' | abspath }}", cwd="/"
-    ) == os.path.abspath(r"/path/to/file.txt")
+    ) == str(Path(r"/path/to/file.txt").resolve())
 
     # method: joinpath
     assert pathactioncfg._jinja2_render(
         "{{ ['/path', 'to', 'file.txt'] | joinpath }}", cwd="/"
-    ) == os.path.join("/path", "to", "file.txt")
+    ) == str(Path("/path") / "to" / "file.txt")
 
     # method: joincmd
     assert pathactioncfg._jinja2_render(
@@ -163,9 +167,9 @@ def test_pathactioncfg_jinja_render():
     ) == str(["cp", "/file", "/file2"])
 
     # method: expanduser
-    assert pathactioncfg._jinja2_render(
-        "{{ '~/file' | expanduser }}", cwd="/"
-    ) == os.path.expanduser("~/file")
+    assert pathactioncfg._jinja2_render("{{ '~/file' | expanduser }}", cwd="/") == str(
+        Path("~/file").expanduser()
+    )
 
     # method: expandvars
     if "TEST" not in os.environ:
@@ -176,28 +180,29 @@ def test_pathactioncfg_jinja_render():
 
     # method: file_dirname
     assert (
-        os.path.basename(
+        Path(
             pathactioncfg._jinja2_render(
                 "{{ file | file_only_dirname }}",
                 cwd="/",
             )
-        )
+        ).name
         == "case1"
     )
 
     # method: file_dirname
     assert (
-        os.path.basename(
+        Path(
             pathactioncfg._jinja2_render(
                 "{{ file | dirname | file_only_dirname }}",
                 cwd="/",
             )
-        )
+        ).name
         == "case1"
     )
 
 
 def test_pathactioncfg_directory_load_all_cfg():
+    """Test loading configuration files when the target is a directory."""
     source_code = QA_BASEDIR.joinpath("case1")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -207,17 +212,17 @@ def test_pathactioncfg_directory_load_all_cfg():
 
 
 def test_pathactioncfg_cwd_in_path_match():
+    """Test using the cwd variable in path_match."""
     source_code = QA_BASEDIR.joinpath("case1", "file4.bash")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
     actioncommand = pathactioncfg.find_command("main")
     assert actioncommand is not None
-    assert (
-        os.path.basename(os.path.dirname(str(actioncommand["path_match"]))) == "case1"
-    )
+    assert Path(str(actioncommand["path_match"])).parent.name == "case1"
 
 
 def test_pathactioncfg_reset():
+    """Test resetting PathActionCfg state."""
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.reset()
@@ -231,6 +236,7 @@ def test_pathactioncfg_reset():
 
 
 def test_pathactioncfg_test_case_schema_error():
+    """Test handling of schema errors in configuration files."""
     source_code = QA_BASEDIR.joinpath("case2_schema_error", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     with pytest.raises(PathActionError):
@@ -238,6 +244,7 @@ def test_pathactioncfg_test_case_schema_error():
 
 
 def test_pathactioncfg_test_case_more_than_one_cfg():
+    """Test error raised when multiple config files exist in the same directory."""
     source_code = QA_BASEDIR.joinpath("case3_two_cfg_files", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     with pytest.raises(PathActionError):
@@ -245,6 +252,7 @@ def test_pathactioncfg_test_case_more_than_one_cfg():
 
 
 def test_pathactioncfg_test_case_shell_does_not_exist():
+    """Test error raised when the configured shell does not exist."""
     source_code = QA_BASEDIR.joinpath("case4_shell", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     with pytest.raises(PathActionError):
@@ -252,6 +260,7 @@ def test_pathactioncfg_test_case_shell_does_not_exist():
 
 
 def test_pathactioncfg_test_case_yaml_syntax():
+    """Test error raised on invalid YAML syntax."""
     source_code = QA_BASEDIR.joinpath("case5_yaml_syntax", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     with pytest.raises(PathActionError):
@@ -259,6 +268,7 @@ def test_pathactioncfg_test_case_yaml_syntax():
 
 
 def test_pathactioncfg_test_case_invalid_regex():
+    """Test error raised on invalid regular expressions."""
     source_code = QA_BASEDIR.joinpath("case6_invalid_regex", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     with pytest.raises(PathActionError):
@@ -266,6 +276,7 @@ def test_pathactioncfg_test_case_invalid_regex():
 
 
 def test_pathactioncfg_test_case_mimetype():
+    """Test matching actions by file mimetype."""
     source_code = QA_BASEDIR.joinpath("case7_mimetype", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -274,6 +285,7 @@ def test_pathactioncfg_test_case_mimetype():
 
 
 def test_pathactioncfg_test_case_mimetype_regex():
+    """Test matching actions by mimetype regular expression."""
     source_code = QA_BASEDIR.joinpath("case7_mimetype", "file.py")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -282,6 +294,7 @@ def test_pathactioncfg_test_case_mimetype_regex():
 
 
 def test_pathactioncfg_test_case_mimetype_match():
+    """Test matching actions by mimetype glob pattern."""
     source_code = QA_BASEDIR.joinpath("case7_mimetype", "file.txt")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -290,6 +303,7 @@ def test_pathactioncfg_test_case_mimetype_match():
 
 
 def test_pathactioncfg_test_case_mimetype_empty_file():
+    """Test matching actions when the target file has no mimetype."""
     source_code = QA_BASEDIR.joinpath("case10_mimetype_empty", "empty")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -298,6 +312,7 @@ def test_pathactioncfg_test_case_mimetype_empty_file():
 
 
 def test_pathactioncfg_test_case_conflict_command_list_commands():
+    """Test error raised when both command and list_commands are specified."""
     source_code = QA_BASEDIR.joinpath(
         "case8_conflict_list_commands_command", "file.txt"
     )
@@ -318,6 +333,7 @@ def test_pathactioncfg_path_match_cwd():
 
 
 def test_pathactioncfg_options_jinja2():
+    """Test rendering Jinja2 templates in the options section."""
     source_code = QA_BASEDIR.joinpath("case11_options_jinja2", "file4.bash")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -326,11 +342,13 @@ def test_pathactioncfg_options_jinja2():
 
 
 def test_pathactioncfg_file_does_not_have_to_exist():
+    """Test initializing PathActionCfg with a non-existent file."""
     source_code = QA_BASEDIR.joinpath("case1", "doesnotexist.py")
-    pathactioncfg = PathActionCfg(source_code=str(source_code))
+    PathActionCfg(source_code=str(source_code))
 
 
 def test_pathactioncfg_test_case_matches():
+    """Test matching actions against various path and regex rules."""
     # source_code = QA_BASEDIR.joinpath("case1", "file.doesnotexist")
     # with pytest.raises(PathActionError):
     #     pathactioncfg = PathActionCfg(source_code=str(source_code))
@@ -395,6 +413,7 @@ def test_pathactioncfg_test_case_matches():
 
 
 def test_pathactioncfg_stdout_stderr():
+    """Test redirecting stdout and stderr to files in ActionCommand."""
     source_code = QA_BASEDIR.joinpath("case12_stdout_stderr", "stdout_stderr")
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
@@ -412,24 +431,24 @@ def test_pathactioncfg_stdout_stderr():
             actioncommand["stderr"] = tmp_stderr
 
             if delete_file:
-                os.remove(tmp_stdout)
-                os.remove(tmp_stderr)
+                Path(tmp_stdout).unlink()
+                Path(tmp_stderr).unlink()
 
             assert actioncommand.run("/bin/sh")
 
-            with open(actioncommand["stdout"], "r", encoding="utf-8") as fhandler:
+            with Path(actioncommand["stdout"]).open(encoding="utf-8") as fhandler:
                 line = fhandler.readline().strip()
                 assert line == "stdout_test"
 
-            with open(actioncommand["stderr"], "r", encoding="utf-8") as fhandler:
+            with Path(actioncommand["stderr"]).open(encoding="utf-8") as fhandler:
                 line = fhandler.readline().strip()
                 assert line == "stderr_test"
         finally:
             if tmp_stdout:
-                os.remove(tmp_stdout)
+                Path(tmp_stdout).unlink()
 
             if tmp_stderr:
-                os.remove(tmp_stderr)
+                Path(tmp_stderr).unlink()
 
     # Same stdout and stderr
     for delete_file in [False, True]:
@@ -437,15 +456,15 @@ def test_pathactioncfg_stdout_stderr():
         try:
             _, tmp_stdout = tempfile.mkstemp(prefix="pathaction", suffix=".test")
             if delete_file:
-                os.remove(tmp_stdout)
+                Path(tmp_stdout).unlink()
             actioncommand["stdout"] = tmp_stdout
             actioncommand["stderr"] = tmp_stdout
 
             assert actioncommand.run("/bin/sh")
 
-            with open(actioncommand["stdout"], "r", encoding="utf-8") as fhandler:
+            with Path(actioncommand["stdout"]).open(encoding="utf-8") as fhandler:
                 line = fhandler.read().splitlines()
                 assert line == ["stdout_test", "stderr_test"]
         finally:
             if tmp_stdout:
-                os.remove(tmp_stdout)
+                Path(tmp_stdout).unlink()

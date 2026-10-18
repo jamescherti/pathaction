@@ -18,24 +18,22 @@
 #
 """Test the class Util()."""
 
+import importlib.util
 import os
 import tempfile
 import unittest.mock
 from pathlib import Path
 
 import pytest
+
 from pathaction.exceptions import PathActionError
 from pathaction.util import Util
 
-try:
-    import colorama  # type: ignore
-
-    HAS_COLORAMA: bool = True
-except ImportError:
-    HAS_COLORAMA = False
+HAS_COLORAMA: bool = importlib.util.find_spec("colorama") is not None
 
 
 def test_util_which():
+    """Test Util.which()."""
     with pytest.raises(PathActionError):
         Util.which("does_not_exist")
 
@@ -58,10 +56,10 @@ def test_util_which():
     with pytest.raises(PathActionError):
         Util.which("sh", cwd="/bin", env_path="")
 
-    cwd = os.getcwd()
+    cwd = Path.cwd()
     os.chdir("/bin")
-    new_cwd = os.getcwd()
-    assert Util.which("./sh", env_path="") == str(os.path.join(new_cwd, "sh"))
+    new_cwd = Path.cwd()
+    assert Util.which("./sh", env_path="") == str(new_cwd / "sh")
     os.chdir(cwd)
 
 
@@ -77,8 +75,9 @@ def test_util_color() -> None:
 
 
 def test_util_pcolor():
+    """Test Util.pcolor()."""
     Util.IS_A_TTY = False
-    with open(os.devnull, "w", encoding="utf-8") as devnull:
+    with Path(os.devnull).open("w", encoding="utf-8") as devnull:
         assert (
             Util.pcolor(
                 color=Util.COLOR_SUCCESS, string="Test", prefix="PREFIX ", file=devnull
@@ -88,6 +87,7 @@ def test_util_pcolor():
 
 
 def test_util_file_ends_with():
+    """Test Util.file_ends_with()."""
     tmp_path = None
     try:
         _, tmp_path = tempfile.mkstemp(prefix="prefix", suffix=".yaml")
@@ -98,30 +98,32 @@ def test_util_file_ends_with():
         ) == [str(tmpdir.joinpath(tmpname + ".yaml"))]
     finally:
         if tmp_path:
-            os.remove(tmp_path)
+            Path(tmp_path).unlink()
 
 
 def test_util_read_shebang():
+    """Test Util.read_shebang()."""
     tmp_path = None
     try:
         _, tmp_path = tempfile.mkstemp(prefix="test_read_shebang", suffix=".sh")
         # There is NO shebang
-        with open(tmp_path, "w", encoding="utf-8") as fhandler:
+        with Path(tmp_path).open("w", encoding="utf-8") as fhandler:
             fhandler.write("echo 'Hello world'")
         with pytest.raises(PathActionError):
             Util.read_shebang(tmp_path)
 
         # There is a shebang
-        with open(tmp_path, "w", encoding="utf-8") as fhandler:
+        with Path(tmp_path).open("w", encoding="utf-8") as fhandler:
             fhandler.write("#!/usr/bin/env /bin/test" + os.linesep)
             fhandler.write("echo 'Hello world'")
         assert Util.read_shebang(tmp_path) == "/usr/bin/env /bin/test"
     finally:
         if tmp_path:
-            os.remove(tmp_path)
+            Path(tmp_path).unlink()
 
 
 def test_util_ask_question():
+    """Test Util.ask_question()."""
     with unittest.mock.patch("builtins.input", return_value="y"):
         assert (
             Util.ask_question(
@@ -140,4 +142,5 @@ def test_util_ask_question():
 
 
 def test_util_home_to_tilde():
-    assert Util.home_to_tilde(os.path.expanduser("~/test")) == "~/test"
+    """Test Util.home_to_tilde()."""
+    assert Util.home_to_tilde(str(Path("~/test").expanduser())) == "~/test"
