@@ -63,6 +63,8 @@ proctitle = ["setproctitle"]
 test = [
   "pytest",
   "pytest-cov",
+  "ruff",
+  "mypy",
 ]
 
 [project.urls]
