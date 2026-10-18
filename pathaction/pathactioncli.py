@@ -163,7 +163,7 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = Path(pathaction_cfg.source_code).absolute()  # noqa: PTH100
+                source_code = Path(pathaction_cfg.source_code).absolute()
                 resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:

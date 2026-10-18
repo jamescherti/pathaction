@@ -197,7 +197,7 @@ class Util:
                 signal.alarm(0)  # cancel the alarm
 
     @staticmethod
-    def file_ends_with(path_prefix: str, path_suffixes: list) -> list[str]:
+    def file_ends_with(path_prefix: str, path_suffixes: list[str]) -> list[str]:
         """Return valid system paths that end with given suffixes.
 
         Args:

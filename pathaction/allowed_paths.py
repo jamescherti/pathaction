@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from pprint import pformat
 from typing import TextIO
@@ -69,7 +70,7 @@ class AllowedPaths:
         """Return all permanent and temporary paths."""
         return set(self._temporarily_allowed | self._permanently_allowed)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Path]:
         """Iterate over all allowed paths."""
         return iter(self.get_all())
 
