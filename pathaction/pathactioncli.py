@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import os
 import subprocess  # nosec B404
 import sys
 import traceback
@@ -163,7 +164,7 @@ class PathActionCli:
         for filename in self.args.list_filenames:
             try:
                 pathaction_cfg = PathActionCfg(filename)
-                source_code = str(Path(pathaction_cfg.source_code).absolute())
+                source_code = os.path.abspath(pathaction_cfg.source_code)  # noqa: PTH100
                 resolved_source_code = Path(source_code).resolve()
 
                 if self.args.allow_dir:
@@ -356,7 +357,7 @@ class PathActionCli:
         self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
         source_code = Util.home_to_tilde(
-            str(Path(self.pathaction_cfg.source_code).absolute())
+            os.path.abspath(self.pathaction_cfg.source_code)  # noqa: PTH100
         )
 
         if self.pathaction_cfg.verbose:

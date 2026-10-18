@@ -595,7 +595,8 @@ class PathActionCfg:
                     # reload
                     self.reset()
                     loaded_cfg_files = []
-                    self.load_cfg(yaml_path)
+                    if self.load_cfg(yaml_path):
+                        loaded_cfg_files.append(yaml_path)
             except schema.SchemaError as err:
                 if schema_error is None:
                     schema_error = str(err)
@@ -624,7 +625,12 @@ class PathActionCfg:
         def env_filters_quote(arg):
             if isinstance(arg, list):
                 return [
-                    (shlex.quote(item) if isinstance(item, str) else item)
+                    (
+                        shlex.quote(str(item))
+                        if isinstance(item, (str, int, float))
+                        and not isinstance(item, bool)
+                        else item
+                    )
                     for item in arg
                 ]
 
