@@ -30,7 +30,7 @@ import pytest
 from pathaction.exceptions import PathActionError
 from pathaction.pathactioncfg import ActionCommand, PathActionCfg, platform_quote
 
-QA_BASEDIR = Path("./tests/pathactioncfg_cases")
+QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 
 
 def test_pathactioncfg_cwd_in_cwd():
@@ -43,7 +43,7 @@ def test_pathactioncfg_cwd_in_cwd():
     assert Path(actioncommand["cwd"]).parent.name == "case1"
 
 
-def test_pathactioncfg_jinja_render():
+def test_pathactioncfg_jinja_render(monkeypatch: pytest.MonkeyPatch):
     """Test rendering Jinja2 templates and filters in PathActionCfg."""
     # FILE: file.py
     source_code = QA_BASEDIR.joinpath("case1", "file.py")
@@ -162,7 +162,7 @@ def test_pathactioncfg_jinja_render():
 
     # method: expandvars
     if "TEST" not in os.environ:
-        os.environ["TEST"] = "TEST RESULT"
+        monkeypatch.setenv("TEST", "TEST RESULT")
     assert pathactioncfg._jinja2_render(
         "{{ '$TEST' | expandvars }}", cwd=anchor
     ) == os.path.expandvars("$TEST")
@@ -170,9 +170,11 @@ def test_pathactioncfg_jinja_render():
     # method: file_dirname
     assert (
         Path(
-            pathactioncfg._jinja2_render(
-                "{{ file | file_only_dirname }}",
-                cwd=anchor,
+            str(
+                pathactioncfg._jinja2_render(
+                    "{{ file | file_only_dirname }}",
+                    cwd=anchor,
+                )
             )
         ).name
         == "case1"
@@ -181,9 +183,11 @@ def test_pathactioncfg_jinja_render():
     # method: file_dirname
     assert (
         Path(
-            pathactioncfg._jinja2_render(
-                "{{ file | dirname | file_only_dirname }}",
-                cwd=anchor,
+            str(
+                pathactioncfg._jinja2_render(
+                    "{{ file | dirname | file_only_dirname }}",
+                    cwd=anchor,
+                )
             )
         ).name
         == "case1"
@@ -326,7 +330,6 @@ def test_pathactioncfg_options_jinja2():
     pathactioncfg = PathActionCfg(source_code=str(source_code))
     pathactioncfg.load_all_cfg(limit=1)
     options = pathactioncfg.cfg["options"]
-    # Provide a realistic expectation instead of strictly "sh" to pass cross-platform
     assert "sh" in options["shell_path"] or options["shell_path"]
 
 
@@ -427,7 +430,8 @@ def test_pathactioncfg_stdout_stderr(tmp_path: Path):
             actioncommand["stdout"] = str(tmp_stdout)
             actioncommand["stderr"] = str(tmp_stderr)
 
-            assert actioncommand.run(sys.executable)
+            _, errno = actioncommand.run(sys.executable)
+            assert errno == 0
 
             if not use_same_file:
                 with tmp_stdout.open(encoding="utf-8") as fhandler:
@@ -552,5 +556,4 @@ def test_pathactioncfg_option_last(tmp_path: Path):
     pathactioncfg = PathActionCfg(source_code=str(sub_dir / "test.py"))
     loaded = pathactioncfg.load_all_cfg(limit=2)
     assert loaded == [str(child_cfg.resolve())]
-    assert "parent_var" not in pathactioncfg.cfg["vars"]
     assert "parent_var" not in pathactioncfg.cfg["vars"]

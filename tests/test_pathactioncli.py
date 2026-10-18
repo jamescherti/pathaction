@@ -27,7 +27,7 @@ import pytest
 from pathaction.allowed_paths import AllowedPaths
 from pathaction.pathactioncli import PathActionCli
 
-QA_BASEDIR = Path("./tests/pathactioncfg_cases")
+QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 EXIT_CODE_SH = 64
 EXIT_CODE_NH = 111
 
