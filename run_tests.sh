@@ -19,6 +19,9 @@
 
 export PYTHONPATH=".:$PYTHONPATH"
 
+set -e
+set -u
+
 rm -f .coverage coverage.json
 ruff check pathaction/*.py tests/*.py
 mypy pathaction/*.py tests/*.py
