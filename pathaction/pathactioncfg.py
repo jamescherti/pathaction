@@ -691,14 +691,14 @@ class PathActionCfg:
             str(Path(file_path).parent) if Path(file_path).is_file() else str(file_path)
         )
         env.filters["realpath"] = lambda arg: str(Path(arg).resolve())
-        env.filters["abspath"] = lambda arg: os.path.abspath(arg)
-        env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)  # noqa: PLW0108
+        env.filters["abspath"] = lambda arg: str(Path(arg).absolute())
         env.filters["joinpath"] = lambda lst: str(Path(*lst))
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
         env.filters["splitcmd"] = lambda arg: shlex.split(
             arg, posix=(sys.platform != "win32")
         )
         env.filters["expanduser"] = lambda arg: str(Path(arg).expanduser())
+        env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)  # noqa: PLW0108
         env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)  # noqa: PLW0108
 
         j2_template = env.from_string(string)
