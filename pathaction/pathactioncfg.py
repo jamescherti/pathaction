@@ -575,26 +575,16 @@ class PathActionCfg:
         # Load pathaction.yaml from the current directory and parent
         # directories
         #
-        filename = ""
-        dirname = str(self.source_code.absolute())
-        first = True
+        dirname = self.source_code.resolve()
+        if not dirname.is_dir():
+            dirname = dirname.parent
+
         while True:
-            if first:
-                if not Path(dirname).is_dir():
-                    dirname, filename = os.path.split(dirname)
-
-                first = False
-            else:
-                dirname, filename = os.path.split(dirname)
-
-                if not filename:
-                    break
-
             if limit == 0:
                 break
 
             list_pathaction_files = Util.file_ends_with(
-                str(Path(dirname) / ".pathaction"), PathActionCfg.yaml_ext
+                str(dirname / ".pathaction"), PathActionCfg.yaml_ext
             )
 
             if len(list_pathaction_files) > 1:
@@ -609,10 +599,11 @@ class PathActionCfg:
             if list_pathaction_files and list_pathaction_files[0] not in list_cfg_files:
                 list_cfg_files.insert(0, list_pathaction_files[0])
 
-            limit -= 1
-
-            if not dirname:
+            if dirname == dirname.parent:
                 break
+
+            dirname = dirname.parent
+            limit -= 1
 
         #
         # Load cfg files
@@ -694,20 +685,20 @@ class PathActionCfg:
         env.filters["quote"] = env_filters_quote
         env.filters["startswith"] = lambda string, prefix: string.startswith(prefix)
         env.filters["endswith"] = lambda string, suffix: string.endswith(suffix)
-        env.filters["basename"] = lambda arg: os.path.basename(arg)  # noqa: PTH119, PLW0108
-        env.filters["dirname"] = lambda arg: os.path.dirname(arg)  # noqa: PTH120, PLW0108
+        env.filters["basename"] = lambda arg: Path(arg).name
+        env.filters["dirname"] = lambda arg: str(Path(arg).parent)
         env.filters["file_only_dirname"] = lambda file_path: (
-            os.path.dirname(file_path) if os.path.isfile(file_path) else file_path  # noqa: PTH113, PTH120
+            str(Path(file_path).parent) if Path(file_path).is_file() else str(file_path)
         )
-        env.filters["realpath"] = lambda arg: os.path.realpath(arg)  # noqa: PLW0108
-        env.filters["abspath"] = lambda arg: os.path.abspath(arg)  # noqa: PTH100, PLW0108
+        env.filters["realpath"] = lambda arg: str(Path(arg).resolve())
+        env.filters["abspath"] = lambda arg: os.path.abspath(arg)
         env.filters["relpath"] = lambda *arg: os.path.relpath(*arg)  # noqa: PLW0108
-        env.filters["joinpath"] = lambda lst: os.path.join(*lst)  # noqa: PTH118
+        env.filters["joinpath"] = lambda lst: str(Path(*lst))
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
         env.filters["splitcmd"] = lambda arg: shlex.split(
             arg, posix=(sys.platform != "win32")
         )
-        env.filters["expanduser"] = lambda arg: os.path.expanduser(arg)  # noqa: PTH111, PLW0108
+        env.filters["expanduser"] = lambda arg: str(Path(arg).expanduser())
         env.filters["expandvars"] = lambda arg: os.path.expandvars(arg)  # noqa: PLW0108
 
         j2_template = env.from_string(string)
