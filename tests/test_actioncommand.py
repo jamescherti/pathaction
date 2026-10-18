@@ -50,7 +50,7 @@ def test_actioncommand_schema():
     assert actioncommand["comment"] == ""
     assert actioncommand["shell"] is False
     assert actioncommand["cwd"] == ""
-    assert isinstance(ActionCommand, UserDict) is False
+    assert issubclass(ActionCommand, UserDict) is True
 
 
 def test_actioncommand_run_list_commands():
