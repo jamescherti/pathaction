@@ -133,7 +133,7 @@ class Util:
         question: str,
         answers: list[str],
         timeout: int = 0,
-        hook_invalid_entry: Callable = lambda _: None,
+        hook_invalid_entry: Callable[[str], None] = lambda _: None,
         empty_stdin: bool = True,
     ) -> str:
         """Prompt a question and wait for specific answers."""
