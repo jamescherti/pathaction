@@ -54,6 +54,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install .[test,colors,proctitle]
+          pip install types-PyYAML types-colorama
 
       - name: Run tests
         shell: sh
