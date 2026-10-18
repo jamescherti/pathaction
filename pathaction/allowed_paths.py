@@ -84,10 +84,7 @@ class AllowedPaths:
             True if the path is allowed, False otherwise.
         """
         rpath = Path(path).resolve()
-        return any(
-            rpath.is_relative_to(allowed_path)  # type: ignore
-            for allowed_path in self
-        )
+        return any(rpath.is_relative_to(allowed_path) for allowed_path in self)
 
     def load_from_yaml(self, path: str | Path) -> None:
         """Load the list of allowed paths from a YAML file.
@@ -137,7 +134,9 @@ class AllowedPaths:
     def _gen_saveable_data(self) -> dict[str, list[str]]:
         """Generate saveable data dictionary."""
         return {
-            "permanently_allowed": [str(path) for path in self._permanently_allowed],
+            "permanently_allowed": sorted(
+                str(path) for path in self._permanently_allowed
+            ),
         }
 
     def __repr__(self) -> str:
