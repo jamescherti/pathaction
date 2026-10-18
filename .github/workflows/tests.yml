@@ -23,11 +23,11 @@ on:
   push:
     branches:
       - main
-      - master
+      - develop
   pull_request:
     branches:
       - main
-      - master
+      - develop
 
 jobs:
   test:
@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
@@ -48,19 +48,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
+          allow-prereleases: true
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install ruff
-          pip install .[test]
+          pip install .[test,colors,proctitle]
 
-      - name: Run tests with pytest
-        run: |
-          ruff check pathaction/ tests/
-
-      - name: Run tests with pytest and coverage
-        env:
-          PYTHONPATH: .
-        run: |
-          python -m pytest -p no:libtmux -v --cov=. --cov-report=term-missing --cov-report=json tests/
+      - name: Run tests
+        shell: bash
+        run: bash run_tests.sh
