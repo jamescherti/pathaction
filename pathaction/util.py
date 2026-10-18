@@ -140,24 +140,24 @@ class Util:
         )
 
     @staticmethod
-    def color(text_color: str, string: str = "") -> str:
+    def color(color: str, string: str = "") -> str:
         """Return text formatted with colorama styles."""
         color_reset: int | str = Style.RESET_ALL
         if not Util.IS_A_TTY:
-            text_color = ""
+            color = ""
             color_reset = ""
-        return f"{text_color}{string}{color_reset}"
+        return f"{color}{string}{color_reset}"
 
     @staticmethod
     def pcolor(
-        text_color: str,
+        color: str,
         string: str = "",
         prefix: str = "",
         file: Any = sys.stderr,
         **kwargs: Any,
     ) -> str:
         """Print a colored string with an optional prefix."""
-        colored_text = Util.color(text_color, string)
+        colored_text = Util.color(color, string)
         prefix_str = Util.color(Util.COLOR_HIGHLIGHT, prefix)
         result = f"{prefix_str}{colored_text}"
         print(result, file=file, **kwargs)
