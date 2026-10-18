@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2021-2026 James Cherti
 # URL: https://github.com/jamescherti/pathaction
@@ -129,7 +129,7 @@ def test_pathactioncli_dir_permission_flags(tmp_path: Path):
     target_dir = QA_BASEDIR / "case1"
     target_file = target_dir / "file.py"
 
-    with patch("pathaction.pathactioncli.CFG_ALLOWED_DIRS", str(cfg_file)):
+    with patch("pathaction.pathactioncli.CFG_ALLOWED_DIRS", Path(cfg_file)):
         # --allow-dir on a file (should fail with exit code 1)
         with (
             patch.object(sys, "argv", [sys.argv[0], "--allow-dir", str(target_file)]),
