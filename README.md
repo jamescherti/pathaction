@@ -44,6 +44,12 @@ actions:
 
 There are many ways to match paths, including using regular expressions and MIME types. See below for more details.
 
+## Requirements
+
+- Operating system: UNIX/Linux, Windows, Mac OS X
+- Python 3
+- Python dependencies: jinja2, prompt_toolkit, PyYAML, schema. (Optional: colorama, setproctitle)
+
 ## Editor Plugins
 
 * **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)

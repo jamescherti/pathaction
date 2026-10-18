@@ -55,26 +55,30 @@ def test_pathactioncli_dir_not_allowed():
 def test_pathactioncli(allowed_dirs: AllowedPaths):
     """Test CLI execution on a single allowed file."""
     argv = [sys.argv[0], str(QA_BASEDIR.joinpath("case1", "file.sh"))]
-    with patch.object(sys, "argv", argv):
-        # Test success
+    with (
+        patch.object(sys, "argv", argv),
+        patch(
+            "pathaction.pathactioncfg.ActionCommand.run",
+            return_value=(["mock"], EXIT_CODE_SH),
+        ),
+    ):
         with pytest.raises(SystemExit) as exitinfo:
             PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == EXIT_CODE_SH
 
-        # Test Failure
-        # pathactioncli = PathActionCli(limit_loop=1,
-        #                               limit_load_cfg=1,
-        #                               exit=False)
-        # assert pathactioncli. == 64
-
 
 def test_pathactioncli_error_between_2_success(allowed_dirs: AllowedPaths):
     """Test CLI exit code when a command fails between two successful commands."""
     argv = [sys.argv[0], str(QA_BASEDIR.joinpath("case1", "file.nh"))]
-    with patch.object(sys, "argv", argv):
+    with (
+        patch.object(sys, "argv", argv),
+        patch(
+            "pathaction.pathactioncfg.ActionCommand.run",
+            return_value=(["mock"], EXIT_CODE_NH),
+        ),
+    ):
         with pytest.raises(SystemExit) as exitinfo:
-            # Test success
             PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == EXIT_CODE_NH
@@ -87,9 +91,14 @@ def test_pathactioncli_error_between_2_successful_files(allowed_dirs: AllowedPat
         str(QA_BASEDIR.joinpath("case1", "file.nh")),
         str(QA_BASEDIR.joinpath("case1", "file2.nh")),
     ]
-    with patch.object(sys, "argv", argv):
+    with (
+        patch.object(sys, "argv", argv),
+        patch(
+            "pathaction.pathactioncfg.ActionCommand.run",
+            return_value=(["mock"], EXIT_CODE_NH),
+        ),
+    ):
         with pytest.raises(SystemExit) as exitinfo:
-            # Test success
             PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == EXIT_CODE_NH
@@ -195,6 +204,7 @@ def test_pathactioncli_confirm_before_and_after(allowed_dirs: AllowedPaths):
     # --confirm-before accepted ("y") and --confirm-after ("t" then "n")
     with (
         patch.object(sys, "argv", [sys.argv[0], "-b", "-a", target_file]),
+        patch("pathaction.pathactioncfg.ActionCommand.run", return_value=(["mock"], 0)),
         patch(
             "pathaction.util.Util.ask_question",
             side_effect=["y", "t", "n"],
