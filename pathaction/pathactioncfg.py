@@ -50,9 +50,9 @@ def get_default_shell() -> str:
     """Return default shell path for the current platform."""
     if sys.platform == "win32":
         return os.environ.get("COMSPEC", "cmd.exe")
-
-    # pylint: disable=possibly-used-before-assignment
-    return pwd.getpwuid(os.getuid()).pw_shell
+    else:
+        # pylint: disable=possibly-used-before-assignment
+        return pwd.getpwuid(os.getuid()).pw_shell
 
 
 def platform_quote(text: str) -> str:
