@@ -520,7 +520,7 @@ class PathActionCfg:
 
         try:
             with Path(abs_yaml_path).open(encoding="utf-8") as fhandler:
-                raw_cfg = yaml.full_load(fhandler)
+                raw_cfg = yaml.safe_load(fhandler)
         except yaml.YAMLError as err:
             err_msg = f"cannot load the YAML file '{abs_yaml_path}'. {err}"
             raise PathActionError(err_msg) from err
@@ -652,7 +652,7 @@ class PathActionCfg:
             )
         )
 
-        def env_filters_quote(arg):
+        def env_filters_quote(arg: Any) -> str | list[Any]:
             if isinstance(arg, list):
                 return [
                     (
@@ -671,7 +671,7 @@ class PathActionCfg:
 
             raise ValueError(f"quote: invalid type: {arg}")
 
-        def env_filters_which(cmd_str):
+        def env_filters_which(cmd_str: Any) -> str:
             if isinstance(cmd_str, str):
                 path_command = shutil.which(cmd_str)
                 if not path_command:
