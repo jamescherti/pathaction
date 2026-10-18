@@ -28,13 +28,15 @@ from pathaction.util import Util
 
 
 def test_actioncommand_exclusive_command():
+    """Test mutually exclusive command options in ActionCommand."""
     path_cfg = ".pathaction.yaml"
     action_dict = {"list_commands": ["true"], "command": "true"}
     with pytest.raises(PathActionError):
-        actioncommand = ActionCommand(path_cfg=path_cfg, action_dict=action_dict)
+        ActionCommand(path_cfg=path_cfg, action_dict=action_dict)
 
 
 def test_actioncommand_schema():
+    """Test the ActionCommand schema and default values."""
     path_cfg = ".pathaction.yaml"
     action_dict = {"list_commands": ["true"]}
     actioncommand = ActionCommand(path_cfg=path_cfg, action_dict=action_dict)
@@ -49,6 +51,7 @@ def test_actioncommand_schema():
 
 
 def test_actioncommand_run_list_commands():
+    """Test running ActionCommand with list_commands."""
     action_dict = {
         "list_commands": [["true"]],
         "comment": "",
@@ -66,6 +69,7 @@ def test_actioncommand_run_list_commands():
 
 
 def test_actioncommand_run_commands():
+    """Test running ActionCommand with a single command."""
     action_dict = {
         "command": "true",
         "comment": "",
