@@ -226,7 +226,7 @@ def test_pathactioncfg_reset():
     assert pathactioncfg.cfg == {
         "options": PathActionCfg.default_options,
         "vars": {},
-        "actions": {},
+        "actions": [],
     }
 
 
