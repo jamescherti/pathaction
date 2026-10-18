@@ -74,11 +74,9 @@ class PathActionCli:
         """Parse the arguments and initialize the CLI."""
         # Variables
         self.confirm_before_disabled = False
-        self.tag: ActionCommand | None = None
         self.errno = 0
         self.limit_loop = limit_loop
         self.limit_load_cfg = limit_load_cfg
-        self.pathaction_cfg: PathActionCfg | None = None
 
         # Init
         if HAS_COLORAMA:
@@ -113,9 +111,7 @@ class PathActionCli:
         # Execute
         first = True
         for pathaction_cfg in list_pathaction_cfg:
-            self.pathaction_cfg = pathaction_cfg
-
-            self.errno = self.main()
+            self.errno = self.main(pathaction_cfg)
             if self.errno != 0:
                 break
 
@@ -226,7 +222,7 @@ class PathActionCli:
 
         return list_pathaction_cfg
 
-    def main(self) -> int:
+    def main(self, pathaction_cfg: PathActionCfg) -> int:
         """Run the main CLI execution loop."""
         limit_loop = self.limit_loop
         ask_execute_again = False
@@ -238,11 +234,11 @@ class PathActionCli:
             limit_loop -= 1
 
             try:
-                if ask_execute_again and not self.ask_execute_again():
+                if ask_execute_again and not self.ask_execute_again(pathaction_cfg):
                     break
 
-                self.load_cfg_files()
-                errno = self.run_from_yaml()
+                tag = self.load_cfg_files(pathaction_cfg)
+                errno = self.run_from_yaml(pathaction_cfg, tag)
             except (
                 PathActionError,
                 schema.SchemaError,
@@ -254,7 +250,7 @@ class PathActionCli:
                 Util.pcolor(Util.COLOR_ERROR, f"Error: {err}")
                 errno = 1
             except KeyboardInterrupt:
-                if self.pathaction_cfg and self.pathaction_cfg.verbose:
+                if pathaction_cfg.verbose:
                     Util.pcolor(Util.COLOR_ERROR)
                     Util.pcolor(
                         Util.COLOR_ERROR,
@@ -267,8 +263,6 @@ class PathActionCli:
                 errno = 1
 
             ask_execute_again = True
-            if not self.pathaction_cfg:
-                break
 
             if not self.args.confirm_after:
                 break
@@ -352,30 +346,28 @@ class PathActionCli:
 
         return parser.parse_args(sys.argv[1:])
 
-    def load_cfg_files(self) -> None:
+    def load_cfg_files(self, pathaction_cfg: PathActionCfg) -> ActionCommand:
         """Load all valid configuration files."""
         limit_load_cfg = self.limit_load_cfg
-        self.pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
+        pathaction_cfg.load_all_cfg(limit=limit_load_cfg)
 
-        source_code = Util.home_to_tilde(
-            str(self.pathaction_cfg.source_code.absolute())
-        )
+        source_code = Util.home_to_tilde(str(pathaction_cfg.source_code.absolute()))
 
-        if self.pathaction_cfg.verbose:
+        if pathaction_cfg.verbose:
             Util.pcolor(
                 Util.COLOR_TEXT, f"source code: {source_code}", prefix="[INFO] "
             )
 
-        if self.pathaction_cfg.debug:
+        if pathaction_cfg.debug:
             Util.pcolor(
                 Util.COLOR_TEXT, "Rule set files that were loaded:", prefix="[INFO] "
             )
 
-        for yaml_path in self.pathaction_cfg.loaded_yaml_path:
-            if self.pathaction_cfg.debug:
+        for yaml_path in pathaction_cfg.loaded_yaml_path:
+            if pathaction_cfg.debug:
                 print(f"  - {yaml_path}")
 
-        if not self.pathaction_cfg.loaded_yaml_path:
+        if not pathaction_cfg.loaded_yaml_path:
             list_qa_files = ", ".join([".pathaction.yaml", ".pathaction.yml"])
             err_msg = (
                 "none of the pathaction YAML files were found, "
@@ -386,31 +378,28 @@ class PathActionCli:
             raise PathActionError(err_msg)
 
         # Return action
-        action = self.pathaction_cfg.find_command(self.args.tag)
+        action = pathaction_cfg.find_command(self.args.tag)
         if not action:
-            list_qa_files = ", ".join(self.pathaction_cfg.loaded_yaml_path)
+            list_qa_files = ", ".join(pathaction_cfg.loaded_yaml_path)
             err_msg = (
                 f"the file '{source_code}' does not match any pattern that "
                 f"is defined in one of the rule set files {list_qa_files}."
             )
             raise PathActionError(str(err_msg))
 
-        self.show_action_infos(action)
-        self.tag = action
+        self.show_action_infos(pathaction_cfg, action)
+        return action
 
-    def ask_execute_again(self) -> bool:
+    def ask_execute_again(self, pathaction_cfg: PathActionCfg) -> bool:
         """Ask the user if they want to execute the command again."""
-        if not self.pathaction_cfg:
-            return False
-
         if not self.args.confirm_after:
             return False
 
-        ca_timeout = self.pathaction_cfg.cfg["options"]["confirm_after_timeout"]
+        ca_timeout = pathaction_cfg.cfg["options"]["confirm_after_timeout"]
         ca_timeout = max(ca_timeout, 0)
 
         def hook_invalid_entry(_: str) -> None:
-            self.load_cfg_files()
+            self.load_cfg_files(pathaction_cfg)
 
         while True:
             question = "Run again?"
@@ -444,27 +433,29 @@ class PathActionCli:
 
         return False  # exit
 
-    def show_action_infos(self, action: ActionCommand) -> None:
+    def show_action_infos(
+        self, pathaction_cfg: PathActionCfg, action: ActionCommand
+    ) -> None:
         """Print and format the loaded action information."""
-        if self.pathaction_cfg.debug:
+        if pathaction_cfg.debug:
             Util.pcolor(
                 Util.COLOR_TEXT,
                 "Merged configurations from Yaml config files:",
                 prefix="[INFO] ",
             )
-            pprint(self.pathaction_cfg.cfg)
+            pprint(pathaction_cfg.cfg)
 
             if action:
                 Util.pcolor(Util.COLOR_TEXT, "Command:", prefix="[ACTION] ")
                 pprint(action)
 
-        if self.pathaction_cfg.verbose:
+        if pathaction_cfg.verbose:
             Util.pcolor(
                 Util.COLOR_TEXT,
                 f"'{self.args.tag}' loaded from:",
                 prefix="[INFO] ",
             )
-            for item in self.pathaction_cfg.loaded_yaml_path:
+            for item in pathaction_cfg.loaded_yaml_path:
                 tilde_item = Util.home_to_tilde(item)
                 Util.pcolor(Util.COLOR_TEXT, f"  {tilde_item}")
 
@@ -472,7 +463,7 @@ class PathActionCli:
             if action.shell:
                 Util.pcolor(
                     Util.COLOR_TEXT,
-                    self.pathaction_cfg.cfg["options"]["shell_path"],
+                    pathaction_cfg.cfg["options"]["shell_path"],
                     prefix="[SHELL] ",
                 )
 
@@ -504,25 +495,25 @@ class PathActionCli:
         if action.comment:
             Util.pcolor(Util.COLOR_TEXT, action.comment, prefix="[COMMENT] ")
 
-    def run_from_yaml(self) -> int:
+    def run_from_yaml(self, pathaction_cfg: PathActionCfg, tag: ActionCommand) -> int:
         """Run the parsed command configuration."""
         if not self._confirm_execution():
             return 1
 
-        self._print_run_debug()
+        self._print_run_debug(pathaction_cfg, tag)
 
         timeout = -1
         with contextlib.suppress(KeyError):
-            timeout = self.pathaction_cfg.cfg["options"]["timeout"]
+            timeout = pathaction_cfg.cfg["options"]["timeout"]
 
         # String command: use the shell
-        (cmd, errno) = self.tag.run(  # type: ignore
-            shell_path=self.pathaction_cfg.cfg["options"]["shell_path"],
+        (cmd, errno) = tag.run(  # type: ignore
+            shell_path=pathaction_cfg.cfg["options"]["shell_path"],
             timeout=timeout,
-            debug=self.pathaction_cfg.debug,
+            debug=pathaction_cfg.debug,
         )
 
-        self._print_execution_result(cmd, errno)
+        self._print_execution_result(pathaction_cfg, tag, cmd, errno)
         return errno  # type: ignore
 
     def _confirm_execution(self) -> bool:
@@ -537,24 +528,28 @@ class PathActionCli:
         Util.pcolor(Util.COLOR_TEXT, "")
         return True
 
-    def _print_run_debug(self) -> None:
+    def _print_run_debug(
+        self, pathaction_cfg: PathActionCfg, tag: ActionCommand
+    ) -> None:
         """Print debug information for the run command."""
-        if not self.pathaction_cfg.debug:
+        if not pathaction_cfg.debug:
             return
 
         Util.pcolor(Util.COLOR_TEXT, "Run command arguments:", prefix="[RUN COMMAND] ")
 
-        if "command" in self.tag:  # type: ignore
-            Util.pcolor(Util.COLOR_TEXT, "  - command: " + str(self.tag["command"]))  # type: ignore
-        if "list_commands" in self.tag:  # type: ignore
+        if "command" in tag:  # type: ignore
+            Util.pcolor(Util.COLOR_TEXT, "  - command: " + str(tag["command"]))  # type: ignore
+        if "list_commands" in tag:  # type: ignore
             Util.pcolor(
                 Util.COLOR_TEXT,
-                "  - list commands: " + str(self.tag["list_commands"]),
+                "  - list commands: " + str(tag["list_commands"]),
             )  # type: ignore
-        Util.pcolor(Util.COLOR_TEXT, "  - shell: " + str(self.tag.shell))  # type: ignore
-        Util.pcolor(Util.COLOR_TEXT, "  - cwd: " + str(self.tag.cwd))  # type: ignore
+        Util.pcolor(Util.COLOR_TEXT, "  - shell: " + str(tag.shell))  # type: ignore
+        Util.pcolor(Util.COLOR_TEXT, "  - cwd: " + str(tag.cwd))  # type: ignore
 
-    def _print_execution_result(self, cmd: Any, errno: int) -> None:
+    def _print_execution_result(
+        self, pathaction_cfg: PathActionCfg, tag: ActionCommand, cmd: Any, errno: int
+    ) -> None:
         """Print the result of the executed command."""
         if errno != 0:
             status = "[FAILURE] "
@@ -569,7 +564,7 @@ class PathActionCli:
 
         status_color = Util.COLOR_SUCCESS
         Util.pcolor(status_color, "")
-        if not self.pathaction_cfg.debug:
+        if not pathaction_cfg.debug:
             Util.pcolor(
                 status_color, "All commands were successful.", prefix="[SUCCESS] "
             )
@@ -578,16 +573,16 @@ class PathActionCli:
                 status_color, "All commands were successful:", prefix="[SUCCESS] "
             )
 
-            if self.tag and "command" in self.tag:
+            if tag and "command" in tag:
                 string = (
-                    subprocess.list2cmdline(self.tag.command)
-                    if isinstance(self.tag.command, list)
-                    else str(self.tag.command)
+                    subprocess.list2cmdline(tag.command)
+                    if isinstance(tag.command, list)
+                    else str(tag.command)
                 )
                 Util.pcolor(status_color, f"  {string}")
 
-            if self.tag and "list_commands" in self.tag:
-                for tag_cmd in self.tag.list_commands:
+            if tag and "list_commands" in tag:
+                for tag_cmd in tag.list_commands:
                     Util.pcolor(
                         status_color,
                         "  "
