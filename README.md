@@ -49,9 +49,9 @@ There are many ways to match paths, including using regular expressions and MIME
 
 ## Editor Plugins
 
-- **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
-- **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
-- Other editors: Contributions are welcome.
+* **Emacs**: [pathaction.el](https://github.com/jamescherti/pathaction.el)
+* **Vim**: [vim-pathaction](https://github.com/jamescherti/vim-pathaction)
+* Other editors: Contributions are welcome.
 
 ## Installation
 
@@ -167,7 +167,6 @@ You can invoke these specific actions by passing the `-t` (tag) flag:
 ```sh
 pathaction -t typecheck src/utils.py
 pathaction -t test src/test_utils.py
-
 ```
 
 ### Example 2: Managing Infrastructure with Ansible
@@ -180,7 +179,6 @@ actions:
   - path_match: "*playbook.yml"
     tags: main
     command: "ansible-playbook -i inventory.ini {{ file|quote }}"
-
 ```
 
 ### Example 3: C/C++ Compilation and Execution
@@ -201,7 +199,6 @@ actions:
     tags: run
     cwd: "{{ file|dirname }}"
     command: "./{{ file|basename|replace('.cpp', '') }}"
-
 ```
 
 ## Command-Line Arguments
@@ -349,10 +346,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 ## Links
 
-- [pathaction @GitHub](https://github.com/jamescherti/pathaction)
-- [pathaction @PyPI](https://pypi.org/project/pathaction/)
+* [pathaction @GitHub](https://github.com/jamescherti/pathaction)
+* [pathaction @PyPI](https://pypi.org/project/pathaction/)
 
 Plugins for editors:
 
-- [pathaction.el](https://github.com/jamescherti/pathaction.el) (Emacs package): Executing the `pathaction` command-line tool directly from Emacs.
-- [vim-pathaction](https://github.com/jamescherti/vim-pathaction) (Vim plugin): Executing the `pathaction` command-line tool directly from Vim.
+* [pathaction.el](https://github.com/jamescherti/pathaction.el) (Emacs package): Executing the `pathaction` command-line tool directly from Emacs.
+* [vim-pathaction](https://github.com/jamescherti/vim-pathaction) (Vim plugin): Executing the `pathaction` command-line tool directly from Vim.
