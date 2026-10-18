@@ -51,6 +51,7 @@ def get_default_shell() -> str:
     if sys.platform == "win32":
         return os.environ.get("COMSPEC", "cmd.exe")
 
+    # pylint: disable=possibly-used-before-assignment
     return pwd.getpwuid(os.getuid()).pw_shell
 
 
