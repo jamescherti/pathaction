@@ -107,3 +107,25 @@ def test_allowed_paths_is_allowed():
 
     assert not allowed_paths.is_allowed(QA_BASEDIR / "case2")
     assert not allowed_paths.is_allowed(QA_BASEDIR.parent)
+
+
+def test_allowed_paths_reset():
+    """Test resetting permanent and temporary paths in AllowedPaths."""
+    allowed_paths = AllowedPaths()
+    allowed_paths.add(QA_BASEDIR, permanent=True)
+    allowed_paths.add(QA_BASEDIR / "case1", permanent=False)
+    allowed_paths.reset()
+    assert allowed_paths.get_all() == set()
+
+
+def test_allowed_paths_load_empty_or_invalid_yaml():
+    """Test loading empty or malformed YAML strings in AllowedPaths."""
+    allowed_paths = AllowedPaths()
+    allowed_paths.add(QA_BASEDIR, permanent=True)
+
+    allowed_paths.load_yaml_from_string("")
+    assert allowed_paths.get_all() == set()
+
+    allowed_paths.add(QA_BASEDIR, permanent=True)
+    allowed_paths.load_yaml_from_string("permanently_allowed: not_a_list")
+    assert allowed_paths.get_all() == set()

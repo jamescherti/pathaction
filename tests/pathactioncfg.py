@@ -28,7 +28,7 @@ from pathlib import Path
 import pytest
 
 from pathaction.exceptions import PathActionError
-from pathaction.pathactioncfg import PathActionCfg
+from pathaction.pathactioncfg import ActionCommand, PathActionCfg
 
 QA_BASEDIR = Path("./tests/pathactioncfg_cases")
 
@@ -468,3 +468,105 @@ def test_pathactioncfg_stdout_stderr():
         finally:
             if tmp_stdout:
                 Path(tmp_stdout).unlink()
+
+
+def test_pathactioncfg_jinja_extra_filters():
+    """Test shebang_list, shebang_quote, realpath, which, and quote errors."""
+    source_code = QA_BASEDIR.joinpath("case1", "file.py")
+    pathactioncfg = PathActionCfg(source_code=str(source_code))
+
+    # pylint: disable=protected-access
+    assert pathactioncfg._jinja2_render("{{ file | shebang_list }}", cwd="/") == str(
+        ["/usr/bin/env", "python"]
+    )
+    assert (
+        pathactioncfg._jinja2_render("{{ file | shebang_quote }}", cwd="/")
+        == "/usr/bin/env python"
+    )
+    assert pathactioncfg._jinja2_render(
+        "{{ '/path/to/file.txt' | realpath }}", cwd="/"
+    ) == str(Path("/path/to/file.txt").resolve())
+
+    assert pathactioncfg._jinja2_render("{{ 'sh' | which }}", cwd="/") == shutil.which(
+        "sh"
+    )
+
+    with pytest.raises(FileNotFoundError):
+        pathactioncfg._jinja2_render("{{ 'non_existent_bin_xyz' | which }}", cwd="/")
+
+    with pytest.raises(ValueError, match="which: invalid type"):
+        pathactioncfg._jinja2_render("{{ 123 | which }}", cwd="/")
+
+    with pytest.raises(ValueError, match="quote: invalid type"):
+        pathactioncfg._jinja2_render("{{ true | quote }}", cwd="/")
+
+    assert pathactioncfg._jinja2_render("{{ [true] | quote }}", cwd="/") == "[True]"
+
+
+def test_pathactioncfg_jinja_nested_structures():
+    """Test _jinja2_render with nested lists, dicts, and non-string scalars."""
+    source_code = QA_BASEDIR.joinpath("case1", "file.py")
+    pathactioncfg = PathActionCfg(source_code=str(source_code))
+
+    # pylint: disable=protected-access
+    assert pathactioncfg._jinja2_render({"key": ["{{ cwd }}"], "num": 42}, cwd="/") == {
+        "key": ["/"],
+        "num": 42,
+    }
+    assert pathactioncfg._jinja2_render([["{{ cwd }}"], 42], cwd="/") == [["/"], 42]
+    assert pathactioncfg._jinja2_render(42, cwd="/") == 42  # noqa: PLR2004
+
+
+def test_pathactioncfg_exclude_rules():
+    """Test action exclusion rules in find_command."""
+    source_code = QA_BASEDIR.joinpath("case1", "file.py")
+    pathactioncfg = PathActionCfg(source_code=str(source_code))
+    pathactioncfg.cfg["actions"] = [
+        pathactioncfg.cfg["actions"][0] if pathactioncfg.cfg["actions"] else None
+    ]
+
+    pathactioncfg.cfg["actions"] = [
+        ActionCommand(
+            path_cfg=str(QA_BASEDIR / "case1" / ".pathaction.yaml"),
+            action_dict={
+                "path_match": "*.py",
+                "path_match_exclude": "*file.py",
+                "command": "false",
+                "cwd": "/tmp",
+            },
+        ),
+        ActionCommand(
+            path_cfg=str(QA_BASEDIR / "case1" / ".pathaction.yaml"),
+            action_dict={
+                "path_match": "*.py",
+                "command": "true",
+                "cwd": "/tmp",
+            },
+        ),
+    ]
+    actioncommand = pathactioncfg.find_command("main")
+    assert actioncommand is not None
+    assert actioncommand["command"] == "true"
+    assert actioncommand["cwd"] == "/tmp"
+
+
+def test_pathactioncfg_option_last(tmp_path: Path):
+    """Test the 'last' option discarding parent configurations."""
+    parent_cfg = tmp_path / ".pathaction.yaml"
+    parent_cfg.write_text(
+        "vars:\n  parent_var: '1'\nactions:\n  - path_match: '*'\n    "
+        "command: 'true'\n",
+        encoding="utf-8",
+    )
+    sub_dir = tmp_path / "sub"
+    sub_dir.mkdir()
+    child_cfg = sub_dir / ".pathaction.yaml"
+    child_cfg.write_text(
+        "options:\n  last: true\nactions:\n  - path_match: '*'\n    command: 'true'\n",
+        encoding="utf-8",
+    )
+
+    pathactioncfg = PathActionCfg(source_code=str(sub_dir / "test.py"))
+    loaded = pathactioncfg.load_all_cfg(limit=2)
+    assert loaded == [str(child_cfg.resolve())]
+    assert "parent_var" not in pathactioncfg.cfg["vars"]
