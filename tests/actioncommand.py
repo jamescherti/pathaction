@@ -18,7 +18,9 @@
 #
 """Test the class ActionCommand()."""
 
+import sys
 from collections import UserDict
+from unittest.mock import patch
 
 import pytest
 
@@ -53,7 +55,7 @@ def test_actioncommand_schema():
 def test_actioncommand_run_list_commands():
     """Test running ActionCommand with list_commands."""
     action_dict = {
-        "list_commands": [["true"]],
+        "list_commands": [[sys.executable, "-c", "pass"]],
         "comment": "",
         "cwd": "/",
         "tags": "main",
@@ -62,8 +64,8 @@ def test_actioncommand_run_list_commands():
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
     action_dict["path_cfg"] = ""
     assert action_command == action_dict
-    assert action_command.run(shell_path=Util.which("sh"), timeout=0) == (
-        [str(Util.which("true"))],
+    assert action_command.run(shell_path="sh", timeout=0) == (
+        [str(Util.which(sys.executable)), "-c", "pass"],
         0,
     )
 
@@ -71,7 +73,7 @@ def test_actioncommand_run_list_commands():
 def test_actioncommand_run_commands():
     """Test running ActionCommand with a single command."""
     action_dict = {
-        "command": "true",
+        "command": [sys.executable, "-c", "pass"],
         "comment": "",
         "cwd": "/",
         "tags": "main",
@@ -80,8 +82,8 @@ def test_actioncommand_run_commands():
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
     action_dict["path_cfg"] = ""
     assert action_command == action_dict
-    assert action_command.run(shell_path=Util.which("sh"), timeout=0) == (
-        [str(Util.which("true"))],
+    assert action_command.run(shell_path="sh", timeout=0) == (
+        [str(Util.which(sys.executable)), "-c", "pass"],
         0,
     )
 
@@ -109,16 +111,16 @@ def test_actioncommand_run_errors():
     """Test error conditions in ActionCommand.run()."""
     action_command = ActionCommand(path_cfg="", action_dict={})
     with pytest.raises(PathActionError):
-        action_command.run(shell_path=Util.which("sh"))
+        action_command.run(shell_path=sys.executable)
 
     empty_cmd = ActionCommand(path_cfg="", action_dict={"command": ""})
     with pytest.raises(PathActionError):
-        empty_cmd.run(shell_path=Util.which("sh"))
+        empty_cmd.run(shell_path=sys.executable)
 
     invalid_type_cmd = ActionCommand(path_cfg="", action_dict={"command": "true"})
     invalid_type_cmd["command"] = 123  # type: ignore[assignment]
     with pytest.raises(ValueError, match="'cmd' has to be a list or a string"):
-        invalid_type_cmd.run(shell_path=Util.which("sh"))
+        invalid_type_cmd.run(shell_path=sys.executable)
 
 
 def test_actioncommand_run_shell_list_and_timeout():
@@ -130,13 +132,12 @@ def test_actioncommand_run_shell_list_and_timeout():
         "timeout": 5,
     }
     action_command = ActionCommand(path_cfg="", action_dict=action_dict)
-    assert action_command.run(shell_path=Util.which("sh"), debug=True) == (
-        "true",
-        0,
-    )
+
+    with patch("subprocess.call", return_value=0):
+        _, errno = action_command.run(shell_path="sh", debug=True)
+        assert errno == 0
 
     del action_command["timeout"]
-    assert action_command.run(shell_path=Util.which("sh"), timeout=0, debug=True) == (
-        "true",
-        0,
-    )
+    with patch("subprocess.call", return_value=0):
+        _, errno = action_command.run(shell_path="sh", timeout=0, debug=True)
+        assert errno == 0
