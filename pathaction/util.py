@@ -20,18 +20,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 import sys
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-if sys.platform == "win32":
-    import msvcrt
-else:
-    import select
-    import signal
+from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import ANSI
+from prompt_toolkit.input.base import PipeInput
+from prompt_toolkit.input.typeahead import clear_typeahead
 
 try:
     from colorama import Fore, Style
@@ -137,59 +138,54 @@ class Util:
         empty_stdin: bool = True,
     ) -> str:
         """Prompt a question and wait for specific answers."""
-        # Empty stdin
-        if empty_stdin:
-            if sys.platform == "win32":
-                while msvcrt.kbhit():  # pragma: no cover
-                    msvcrt.getwch()  # pragma: no cover
-            else:
-                while (
-                    sys.stdin
-                    in select.select(
-                        [sys.stdin],  # pragma: no cover
-                        [],  # pragma: no cover
-                        [],  # pragma: no cover
-                        0,
-                    )[0]
-                ):  # pragma: no cover
-                    line = sys.stdin.readline()  # pragma: no cover
-                    if not line:  # pragma: no cover
-                        break  # pragma: no cover
+        session: PromptSession[str] = PromptSession()
+        should_empty_stdin = empty_stdin
+        deadline = time.monotonic() + timeout if timeout > 0 else 0.0
+        timer_handle: asyncio.TimerHandle | None = None
 
-        if timeout > 0 and sys.platform != "win32":
+        def alarm_handler() -> None:
+            """Handle the timeout signal."""
+            if session.app.is_running:  # pragma: no cover
+                session.app.exit(exception=TimeoutError())  # pragma: no cover
 
-            def alarm_handler(*args: Any) -> None:
-                """Handle the SIGALRM signal."""
-                raise TimeoutError  # pragma: no cover
+        def pre_run() -> None:
+            nonlocal should_empty_stdin, timer_handle
+            # Empty stdin
+            if should_empty_stdin:
+                should_empty_stdin = False
+                if not isinstance(session.app.input, PipeInput):  # pragma: no cover
+                    while session.app.input.read_keys():  # pragma: no cover
+                        pass  # pragma: no cover
+                    session.app.input.flush_keys()  # pragma: no cover
+                clear_typeahead(session.app.input)
 
-            signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(timeout)
+            if timeout > 0:
+                remaining = max(0.0, deadline - time.monotonic())
+                loop = asyncio.get_running_loop()
+                timer_handle = loop.call_later(remaining, alarm_handler)
 
-        try:
-            while True:
-                try:
-                    Util.pcolor(
-                        Util.COLOR_QUESTION,
-                        "\n" + question,
-                        end="",
-                        file=sys.stdout,
-                        flush=True,
-                    )
-                    answer = input()  # nosec: B322
-                except (EOFError, KeyboardInterrupt):  # pragma: no cover
-                    # Ignore EOF (CTRL-D) and SIGINT (CTRL-C)
-                    answer = ""  # pragma: no cover
+        while True:
+            try:
+                if timeout > 0 and time.monotonic() >= deadline:
+                    raise TimeoutError  # pragma: no cover
 
-                answer = answer.strip()
-
-                if answer in answers:
-                    return answer
-
+                prompt_message = ANSI(Util.color(Util.COLOR_QUESTION, "\n" + question))
+                answer = session.prompt(prompt_message, pre_run=pre_run)
+            except (EOFError, KeyboardInterrupt):  # pragma: no cover
+                # Ignore EOF (CTRL-D) and SIGINT (CTRL-C)
                 answer = ""  # pragma: no cover
-                hook_invalid_entry(answer)
-        finally:
-            if timeout > 0 and sys.platform != "win32":
-                signal.alarm(0)  # cancel the alarm
+            finally:
+                if timer_handle is not None:
+                    timer_handle.cancel()  # cancel the alarm
+                    timer_handle = None
+
+            answer = answer.strip()
+
+            if answer in answers:
+                return answer
+
+            answer = ""  # pragma: no cover
+            hook_invalid_entry(answer)
 
     @staticmethod
     def file_ends_with(path_prefix: str, path_suffixes: list[str]) -> list[str]:
