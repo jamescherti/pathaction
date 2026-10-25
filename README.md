@@ -1,6 +1,9 @@
 # Pathaction | A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+- Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
+- License: GPL
+
 The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a flexible command-line utility for running commands on files and directories. Pass a file path as an argument, and the tool handles the rest, whether you are working with code, media, or configurations.
 
 Think of `pathaction` like a Makefile for any file or directory in the filesystem. It uses a `.pathaction.yaml` file to determine which command to run, and you can use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type. For example, you can set up one tag to run a script, another to debug it, and a third to run a linter.
