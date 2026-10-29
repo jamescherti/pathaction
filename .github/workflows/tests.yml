@@ -29,6 +29,9 @@ on:  # yamllint disable rule:truthy
       - main
       - develop
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
