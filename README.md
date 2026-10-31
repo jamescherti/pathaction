@@ -1,16 +1,24 @@
-# Pathaction | A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory
+# Pathaction | One command to run, compile, lint, deploy, or debug any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL
 
-The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a flexible command-line utility for running commands on files and directories. Pass a file path as an argument, and the tool handles the rest, whether you are working with code, media, or configurations.
+When you jump between different codebases and environments all day, it can be hard to remember the specific build tools, linters, and test runners for each file or project.
 
-Think of `pathaction` like a Makefile for any file or directory in the filesystem. It uses a `.pathaction.yaml` file to determine which command to run, and you can use Jinja2 templating to make those commands dynamic. You can also use tags to define multiple actions for the exact same file type. For example, you can set up one tag to run a script, another to debug it, and a third to run a linter.
+The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line utility for running commands on files and directories.
 
-This tool is built for software engineers who manage multiple projects across diverse environments. It eliminates the cognitive load of switching between different build tools, environment configurations, and deployment methods. Run a single unified command on any file and trust that it gets handled correctly.
+Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` designed to work on individual files and directories.
 
-If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.
+Pass any file or directory as an argument, and `pathaction` executes the right command based on a `.pathaction.yaml` configuration:
+
+- Works on any file: source code, config files, media...
+- Supports Jinja2 in `.pathaction.yaml` so you can build dynamic commands using the target path's filename, extension, or directory.
+- Define multiple actions for the exact same file type. You can map the default action to execute a script, a `debug` tag to attach a debugger, and a `lint` tag to check formatting.
+
+This tool is built for software engineers who manage multiple projects across diverse environments.
+
+(If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.)
 
 ### Example
 
