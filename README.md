@@ -4,9 +4,7 @@
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL
 
-When you jump between different codebases and environments all day, it can be hard to remember the specific build tools, linters, and test runners for each file or project.
-
-The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line utility for running commands on files and directories.
+When you jump between different codebases and environments all day, it can be hard to remember the specific build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
 
 Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` designed to work on individual files and directories.
 
