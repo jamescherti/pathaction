@@ -1,10 +1,10 @@
-# Pathaction | One command to run, compile, lint, deploy, or debug any file or directory
+# Pathaction - One command to run, compile, lint, deploy, or debug any file or directory
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL
 
-When you jump between different codebases and environments all day, it can be hard to remember the specific build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
+When jumping between different codebases and environments, it can be hard to remember the specific deployment method, build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
 
 Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` designed to work on individual files and directories.
 
@@ -14,7 +14,7 @@ Pass any file or directory as an argument, and `pathaction` executes the right c
 - Supports Jinja2 in `.pathaction.yaml` so you can build dynamic commands using the target path's filename, extension, or directory.
 - Define multiple actions for the exact same file type. You can map the default action to execute a script, a `debug` tag to attach a debugger, and a `lint` tag to check formatting.
 
-This tool is built for software engineers who manage multiple projects across diverse environments.
+This tool is built for software developers or system administrators who manage multiple projects across diverse environments.
 
 (If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.)
 
