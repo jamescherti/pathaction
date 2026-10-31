@@ -22,7 +22,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pathaction"
-version = "1.0.1"
+version = "1.1.0"
 description = "A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory"
 readme = "README.md"
 requires-python = ">=3.9, <4"
