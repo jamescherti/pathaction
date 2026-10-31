@@ -4,17 +4,17 @@
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL
 
-When jumping between different codebases and environments, it can be hard to remember the specific deployment method, build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
+When jumping between different codebases and environments, it can be hard to remember the specific deployment methods, build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
 
-Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` designed to work on individual files and directories.
+Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` that works on individual files and directories.
 
 Pass any file or directory as an argument, and `pathaction` executes the right command based on a `.pathaction.yaml` configuration:
 
-- Works on any file: source code, config files, media...
+- Works on any file: source code, config files, media, etc.
 - Supports Jinja2 in `.pathaction.yaml` so you can build dynamic commands using the target path's filename, extension, or directory.
 - Define multiple actions for the exact same file type. You can map the default action to execute a script, a `debug` tag to attach a debugger, and a `lint` tag to check formatting.
 
-This tool is built for software developers or system administrators who manage multiple projects across diverse environments.
+This tool is built for software developers or system administrators who manage multiple files and projects across diverse environments.
 
 (If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.)
 
@@ -363,5 +363,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 Plugins for editors:
 
-* [pathaction.el](https://github.com/jamescherti/pathaction.el) (Emacs package): Executing the `pathaction` command-line tool directly from Emacs.
-* [vim-pathaction](https://github.com/jamescherti/vim-pathaction) (Vim plugin): Executing the `pathaction` command-line tool directly from Vim.
+- [pathaction.el](https://github.com/jamescherti/pathaction.el) (Emacs package): Executing the `pathaction` command-line tool directly from Emacs.
+- [vim-pathaction](https://github.com/jamescherti/vim-pathaction) (Vim plugin): Executing the `pathaction` command-line tool directly from Vim.
+
+Other projects by the same author:
+
+- [git-rexec](https://github.com/jamescherti/git-rexec)
