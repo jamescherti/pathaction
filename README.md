@@ -1,8 +1,13 @@
 # Pathaction - One command to run, compile, lint, deploy, or debug any file or directory
+![Build Status](https://github.com/jamescherti/pathaction/actions/workflows/ci.yml/badge.svg)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI Version](https://img.shields.io/pypi/v/pathaction.svg)](https://pypi.org/project/pathaction/)
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
 
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
-- License: GPL
+- License: GPL 3.0 or later
 
 When jumping between different codebases and environments, it can be hard to remember the specific deployment methods, build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
 
