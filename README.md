@@ -309,6 +309,18 @@ Pathaction walks from the directory containing the file passed to it and merges 
 
 There is a security measure by default: loading rules is allowed only in directories that have been explicitly permitted using `pathaction --allow-dir ~/dir/projects/`, which enables access to `~/dir/projects/` and all its subdirectories. If the entire home directory is allowed with `pathaction --allow-dir ~/`, rules can be loaded from any directory within the home directory.
 
+### Why use pathaction when I can just run the specific target command directly?
+
+If you are running a simple one-off command like `python script.py` in a terminal, typing the command directly is faster. That is not the problem `pathaction` solves.
+
+The `pathaction` tool is an abstraction layer between your tools (editors, file managers, shell bindings) and the diverse environments on your filesystem:
+
+* If you use an editor (e.g, Emacs or Vim), you want a single keybinding for "run", "test", "lint", or "deploy" on the current buffer. Without `pathaction`, you have to hardcode project-specific or language-specific runners inside your editor configuration. With `pathaction`, your editor just passes the current file path and a tag (e.g., `pathaction -t deploy <current-file>`), and the `.pathaction.yaml` dictates how that file is handled.
+* The exact command you need often changes based on where the file lives. A `.py` file in `~/project_a` might need to run via `./.venv/bin/pytest`, while a `.py` file in `~/project_b` needs `docker exec -i container pytest`, and an Ansible `*playbook.yml` needs a specific `-i inventory.ini` flag. Because `.pathaction.yaml` files cascade up the directory tree like `.gitignore`, you define global defaults in `~/` and override them per project.
+* Instead of typing or searching shell history for `g++ -Wall -O2 /path/to/file.cpp -o /path/to/file && /path/to/file` or remembering exact inventory paths and linter flags when jumping between ten different repositories, you define the `.pathaction.yaml` rule once in the directory and use the same interface everywhere.
+
+It is the same reason software developers use `Makefile` targets instead of typing raw compiler and linker invocations every time, except `pathaction` operates on arbitrary file paths across the entire filesystem rather than static build targets in a single directory.
+
 ### What are the differences between make and pathaction?
 
 The make tool centers on targets and dependency tracking, making it good for compiling software based on file timestamps. In contrast, the pathaction tool acts as a universal file execution router. Passing a file path directly to Pathaction determines the correct command to run based on defined file extensions or patterns.
