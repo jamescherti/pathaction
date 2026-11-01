@@ -52,8 +52,19 @@ def get_default_shell() -> str:
         comspec = os.environ.get("COMSPEC", "cmd.exe")
         return shutil.which(comspec) or comspec
     else:
-        # pylint: disable=possibly-used-before-assignment
-        return pwd.getpwuid(os.getuid()).pw_shell
+        try:
+            # pylint: disable=possibly-used-before-assignment
+            shell = pwd.getpwuid(os.getuid()).pw_shell
+            if shell:
+                return shell
+        except KeyError:
+            pass
+
+        # Handle POSIX edge cases: When running inside a container with an arbitrary UID
+        # (for example, docker run --user 10001:10001), that UID often has no entry in
+        # /etc/passwd. In this specific case, calling pwd.getpwuid(os.getuid()) raises
+        # KeyError.
+        return str(os.environ.get("SHELL")) or str(shutil.which("sh"))
 
 
 def platform_quote(text: str) -> str:
