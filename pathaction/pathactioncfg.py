@@ -49,7 +49,8 @@ from .util import Util
 def get_default_shell() -> str:
     """Return default shell path for the current platform."""
     if sys.platform == "win32":
-        return os.environ.get("COMSPEC", "cmd.exe")
+        comspec = os.environ.get("COMSPEC", "cmd.exe")
+        return shutil.which(comspec) or comspec
     else:
         # pylint: disable=possibly-used-before-assignment
         return pwd.getpwuid(os.getuid()).pw_shell
