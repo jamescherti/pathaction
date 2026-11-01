@@ -25,7 +25,7 @@ name = "pathaction"
 version = "1.1.0"
 description = "A universal Makefile for any file in the filesystem: Rule-driven commands for any file or directory"
 readme = "README.md"
-requires-python = ">=3.9, <4"
+requires-python = ">=3.10, <4"
 license = "GPL-3.0-or-later"
 authors = [
   { name = "James Cherti" },
@@ -33,7 +33,6 @@ authors = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",

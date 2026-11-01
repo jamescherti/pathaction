@@ -557,3 +557,40 @@ def test_pathactioncfg_option_last(tmp_path: Path):
     loaded = pathactioncfg.load_all_cfg(limit=2)
     assert loaded == [str(child_cfg.resolve())]
     assert "parent_var" not in pathactioncfg.cfg["vars"]
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows cmd.exe")
+def test_windows_shell_builtin_pipe_and_redirection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify variable expansion, built-ins, pipes, and shell redirection.
+
+    :param tmp_path: Temporary test directory.
+    :param monkeypatch: Environment modification fixture.
+    """
+    shell: str | None = shutil.which("cmd.exe")
+    assert shell is not None, "cmd.exe is required for this integration test"
+
+    monkeypatch.setenv("PATHACTION_TEST_VALUE", "PATHACTION_OK")
+    output: Path = tmp_path / "shell output.txt"
+    stderr: Path = tmp_path / "shell errors.txt"
+
+    action: ActionCommand = ActionCommand(
+        path_cfg=str(tmp_path / ".pathaction.yaml"),
+        action_dict={
+            "command": (
+                "echo %PATHACTION_TEST_VALUE%"
+                '|findstr PATHACTION_OK > "shell output.txt"'
+            ),
+            "shell": True,
+            "cwd": str(tmp_path),
+            "stderr": str(stderr),
+        },
+    )
+
+    _, returncode = action.run(shell_path=shell, timeout=10)
+
+    assert returncode == 0, stderr.read_bytes()
+    assert output.is_file(), stderr.read_bytes()
+    assert output.read_bytes().strip() == b"PATHACTION_OK"
