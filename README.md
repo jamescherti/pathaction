@@ -267,7 +267,7 @@ An action block can include the following optional attributes:
 
 You can define an `options` block at the root of your `.pathaction.yaml` to specify execution defaults:
 
-* **`shell_path`**: The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell).
+* **`shell_path`**: The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell on POSIX and `%COMSPEC%`, or `cmd.exe` if unset, on Windows). Enable `shell: true` for shell features such as pipes, redirection, or built-in commands. Otherwise, prefer `shell: false` with an argument list, especially on Windows, to avoid command-string parsing issues.
 * **`verbose`**: Enable verbose logging.
 * **`debug`**: Enable debug mode.
 * **`timeout`**: A global timeout constraint in seconds.
