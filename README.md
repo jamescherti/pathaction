@@ -11,13 +11,13 @@
 
 When jumping between different codebases and environments, it can be hard to remember the specific deployment methods, build tools, linters, and test runners for each file or project. The **[pathaction](https://github.com/jamescherti/pathaction)** tool is a command-line tool for running commands on files and directories.
 
-Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` that works on individual files and directories.
+Think of **pathaction** as the equivalent of your IDE's "Run" and "Debug" buttons, or a `Makefile` that works on individual files and directories. Unlike `make`, it selects commands by target path and tag rather than tracking build dependencies.
 
 Pass any file or directory as an argument, and `pathaction` executes the right command based on a `.pathaction.yaml` configuration:
 
-- Works on any file: source code, config files, media, etc.
-- Supports Jinja2 in `.pathaction.yaml` so you can build dynamic commands using the target path's filename, extension, or directory.
-- Define multiple actions for the exact same file type. You can map the default action to execute a script, a `debug` tag to attach a debugger, and a `lint` tag to check formatting.
+- Selects configured commands for paths such as source files, configuration files, media, and directories.
+- Supports Jinja2 in `.pathaction.yaml` to construct commands from the target path and custom variables.
+- Defines multiple actions for the same file type. Tags such as `main`, `debug`, and `lint` select configured commands.
 
 This tool is built for software developers or system administrators who manage multiple files and projects across diverse environments.
 
@@ -25,7 +25,8 @@ Note: If this tool helps your workflow, please show your support by **⭐ starri
 
 ### Example
 
-You can execute a file with the following commands:
+With the configuration below and an allowed target directory, execute a Python file with:
+
 ```sh
 pathaction -t main file.py
 ```
@@ -36,7 +37,7 @@ Or:
 pathaction -t edit another-file.jpg
 ```
 
-The `-t` option specifies the tag, allowing you to apply a tagged rule.
+The `-t` option selects a tag. The first matching action with that tag is executed.
 
 Here is an example of what a `.pathaction.yaml` rule-set file looks like:
 
@@ -51,6 +52,7 @@ options:
   verbose: false
 
   # 'timeout': Prevent the command from hanging by killing it after 60 seconds
+  # Set 'timeout' to 0 to disable it.
   timeout: 1800
 
 actions:
@@ -100,51 +102,53 @@ There are many ways to match paths, including using regular expressions and MIME
 
 ## Installation
 
-Here is how to install `pathaction` using [pip](https://pypi.org/project/pip/):
+Install `pathaction` using [pip](https://pypi.org/project/pip/):
 
 ```sh
 pip install --user pathaction
 ```
 
-The pip command above will install the `pathaction` executable in the directory `~/.local/bin/`.
+The executable is installed in the Python user installation scripts directory, commonly `~/.local/bin/` on Linux. The location varies by platform.
 
-Python requirements: jinja2, schema, PyYAML, and prompt-toolkit.
+Required Python packages: jinja2, schema, PyYAML, and prompt_toolkit.
 
 ## Optional Dependencies
 
 The `pathaction` CLI offers optional dependencies that extend its functionality. These extras can be installed according to environment requirements.
 
-**Colored Terminal Output (`colors`)**: Installs `colorama` to provide consistent cross-platform ANSI color support. This enhances the readability of standard output and error messages.
+**Colored Terminal Output (`colors`)**: Installs `colorama` to provide consistent cross-platform ANSI color support. (Pathaction uses this package for its own terminal messages. It does not add color to subprocess output.)
 
 ```bash
-pip install "pathaction[colors]"
+pip install --user "pathaction[colors]"
 ```
 
-**Custom Process Title (`proctitle`)**: Installs `setproctitle` to rename the running process from `python` to `pathaction`. This simplifies identification in system monitoring tools such as `top`, `htop`, and `ps`.
+**Custom Process Title (`proctitle`)**: Installs `setproctitle` to set the process title to the invoked executable basename, normally `pathaction`. This simplifies identification in system monitoring tools such as `top`, `htop`, and `ps`.
 
 ```bash
-pip install "pathaction[proctitle]"
+pip install --user "pathaction[proctitle]"
 ```
 
 To install both extras at once, use a comma-separated list:
 
 ```bash
-pip install "pathaction[colors,proctitle]"
+pip install --user "pathaction[colors,proctitle]"
 ```
 
 ## Getting Started
 
-### 1. Authorize your working directory
+### 1. Authorize the target directory
 
-By default, `pathaction` does not read rule-set files from arbitrary directories for security reasons. The allowed directories must be explicitly permitted. To allow `pathaction` to load rules from your projects folder and its subdirectories, run:
+The CLI requires the resolved target path to be inside an allowed directory. To permit targets in an existing projects directory and its descendants, run:
 
 ```sh
 pathaction --allow-dir ~/projects
 ```
 
+Permissions are stored in `~/.config/pathaction/permissions.yml`. The allow list checks targets, not individual configuration files; ancestor configurations outside the allowed subtree can still be loaded.
+
 ### 2. Create a rule-set file
 
-Navigate to your project root and create a `.pathaction.yaml` file (e.g., `~/projects/my-app/.pathaction.yaml`). Here is a basic example to run Python files:
+Create `.pathaction.yaml` in the project root, for example `~/projects/my-app/.pathaction.yaml`:
 
 ```yaml
 ---
@@ -168,15 +172,15 @@ actions:
 
 ### 3. Execute the file
 
-Now, instead of manually invoking the Python interpreter, you can pass the file directly to `pathaction`. It will read the rule, match the `.py` extension, and execute the command.
+Pass an existing Python file to `pathaction`. The `*.py` pattern matches its absolute path and selects the configured interpreter command.
 
 ```sh
 pathaction ~/projects/my-app/dir1/dir2/file.py
 ```
 
-Because the default tag is `main`, `pathaction` automatically targets the block we just defined.
+The default tag is `main`, so the action above is selected.
 
-You can also specify the tag:
+The tag can also be specified explicitly:
 
 ```sh
 pathaction -t main ~/projects/my-app/dir1/dir2/file.py
@@ -186,9 +190,11 @@ pathaction -t main ~/projects/my-app/dir1/dir2/file.py
 
 The real value of `pathaction` comes from defining complex, multi-tag workflows across different file types. Here are detailed examples of how to configure `.pathaction.yaml` for various scenarios.
 
-### Example 1: Full Python and Bash Workflow
+(The following configurations are independent examples. Required external programs must be installed and available in `PATH`, unless an executable path is configured. String-command examples assume POSIX parsing; argument lists with `shell: false` are preferred on Windows.)
 
-Instead of memorizing different tools and their command-line arguments, you can define them as actions.
+### Example 1: Python and Bash Actions
+
+Define separate tags for execution, testing, and type checking. The `test` action expects a Python file containing pytest tests.
 
 ```yaml
 ---
@@ -222,7 +228,7 @@ actions:
     command: "bash {{ file | quote }}"
 ```
 
-You can run these specific actions by passing the `-t` (tag) flag:
+Select these actions with the `-t` flag:
 
 ```sh
 pathaction -t typecheck src/utils.py
@@ -231,7 +237,7 @@ pathaction -t test src/test_utils.py
 
 ### Example 2: Managing Infrastructure with Ansible
 
-You can set up rules to apply Ansible playbooks directly.
+Run an Ansible playbook whose filename ends in `playbook.yml`. The inventory path is relative to the action working directory, which defaults to the directory containing this configuration.
 
 ```yaml
 ---
@@ -249,9 +255,9 @@ actions:
     command: "ansible-playbook -i {{ inventory | quote }} {{ file | quote }}"
 ```
 
-### Example 3: C/C++ Compilation and Execution
+### Example 3: C++ Compilation and Execution
 
-You can use `pathaction` to compile files on the fly and put the output binary in the correct directory.
+Compile a single, self-contained C++ source file and place the executable beside it. The `.bin` suffix is appended to the complete source path, preserving directory names that contain `.cpp`. Multi-file projects require an appropriate build command.
 
 ```yaml
 ---
@@ -269,20 +275,20 @@ actions:
   - path_match: "*.cpp"
     tags: ["compile", "build"]
     cwd: "{{ file|dirname }}"
-    command: "{{ compiler }} {{ flags }} {{ file | quote }} -o {{ file | replace('.cpp', '') | quote }}"
+    command: "{{ compiler | quote }} {{ flags }} {{ file | quote }} -o {{ (file ~ '.bin') | quote }}"
 
   # Compile and Run the compiled binary
   - path_match: "*.cpp"
     tags: main
     cwd: "{{ file|dirname }}"
     list_commands:
-      - "{{ compiler | quote }} {{ flags }} {{ file | quote }} -o {{ file | replace('.cpp', '') | quote }}"
-      - "{{ file|replace('.cpp', '') | quote }}"
+      - "{{ compiler | quote }} {{ flags }} {{ file | quote }} -o {{ (file ~ '.bin') | quote }}"
+      - "{{ (file ~ '.bin') | quote }}"
 ```
 
 ### Example 4: Custom Variables and Output Redirection
 
-You can define custom parameters in a `vars` block to avoid hardcoding values in your commands. You can also redirect standard output and standard error to specific files using `stdout` and `stderr`.
+Define reusable values in `vars`. The `stdout` and `stderr` fields accept filesystem paths, not shell arguments, so the `quote` filter must not be applied to them. The output files are overwritten for each command.
 
 ```yaml
 ---
@@ -298,14 +304,14 @@ actions:
   - path_match: "*/deploy.sh"
     tags: main
     # Redirect stdout and stderr to deploy_stdout.log and deploy_stderr.log in cwd (the current directory).
-    stdout: "{{ cwd ~ 'deploy_stdout.log' | quote }}"
-    stderr: "{{ cwd ~ 'deploy_stderr.log' | quote }}"
-    command: "bash {{ file | quote }} --env {{ deploy_env }}"
+    stdout: "{{ [cwd, 'deploy_stdout.log'] | joinpath }}"
+    stderr: "{{ [cwd, 'deploy_stderr.log'] | joinpath }}"
+    command: "bash {{ file | quote }} --env {{ deploy_env | quote }}"
 ```
 
 ### Example 5: Exclusion Rules
 
-You can use `_exclude` matchers to prevent an action from running on specific files, such as test scripts.
+An exclusion prevents the current action from matching; later actions can still match the same target.
 
 ```yaml
 ---
@@ -326,7 +332,7 @@ actions:
 
 ### Example 6: Shell Features and Piping
 
-By enabling `shell: true`, you can use pipes, redirection, and other built-in shell features directly in your command strings.
+Set `shell: true` to enable shell syntax. This POSIX example uses `/bin/sh`, a pipeline, and output redirection. `grep` returns status 1 when no lines match, which pathaction reports as a failed command. The output file is overwritten.
 
 ```yaml
 ---
@@ -343,7 +349,7 @@ actions:
   - path_match: "*.log"
     tags: main
     shell: true
-    command: "cat {{ file | quote }} | grep {{ grep_pattern | quote }} > {{ cwd ~ '/log-summary.txt' | quote }}"
+    command: "cat {{ file | quote }} | grep {{ grep_pattern | quote }} > {{ [cwd, 'log-summary.txt'] | joinpath | quote }}"
 ```
 
 ### Example 7: Advanced Matching (MIME Types and Regular Expressions)
@@ -361,7 +367,7 @@ actions:
   - mimetype_match: "image/*"
     tags: main
     command:
-      # This 'command:' is a list. We do not need to use '| quote' here.
+      # Argument lists do not require the quote filter when shell is false
       - "{{ image_viewer }}"
       - "{{ file }}"
 
@@ -370,9 +376,11 @@ actions:
     command: "cat {{ file | quote }}"
 ```
 
+Note: MIME matchers use Python's `mimetypes.guess_type()` to infer a MIME type from the path, not the file contents. Results depend on the platform MIME database. Path regular expressions are searched against the absolute target path.
+
 ### Example 8: Action-Specific Overrides
 
-Action blocks can override global `options` behaviors, such as defining an action-specific timeout or locking execution to a relative working directory.
+An action-level `timeout` overrides the global timeout. An action-level `cwd` selects its working directory. This POSIX example runs pytest from the parent of the test file's directory.
 
 ```yaml
 ---
@@ -399,24 +407,28 @@ actions:
 The `pathaction` utility accepts several arguments to control execution behavior:
 
 - `-t`, `--tag`: Execute the action associated with this tag (default is `main`).
-- `-b`, `--confirm-before`: Prompt for confirmation before executing the defined action.
+- `-b`, `--confirm-before`: Request confirmation before execution. Once accepted, confirmation is disabled for the remainder of that CLI invocation.
 - `-a`, `--confirm-after`: Ask the user if they want to execute the action again after it finishes (respects the `confirm_after_timeout` configuration).
-- `-l`, `--list`: List all the `.pathaction.yaml` configuration files that apply to the given file path. Useful for debugging rule resolution.
-- `-d`, `--allow-dir`: Permanently allow `pathaction` to execute rules from the provided directory and its subdirectories.
-- `--disallow-dir`: Revoke access and remove a specific directory from your allowed list.
+- `-l`, `--list`: List `.pathaction.yaml` files that apply to the given target, nearest first, without executing an action.
+- `-d`, `--allow-dir`: Permanently allow targets in the supplied directory and its descendants. This command authorizes the directory and exits without running an action.
+- `--disallow-dir DIR`: Remove an explicitly stored directory from the allow list. This does not create a deny rule; a broader allowed ancestor still permits the target.
 - `--list-allowed-dirs`: Print a list of all permanently allowed directories.
 
 ## Configuration Guide (.pathaction.yaml)
 
-The rule-sets cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
+The rule-set files `pathaction.yaml` cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
 
-Each rule defined in the rule-set file must include at least the matching rule and the command.
+Discovered files are loaded from ancestor to descendant. `vars` and `options` are shallow-merged by key, with nearer files overriding earlier values. Actions from nearer files are prepended, preserving their order within each file. Only the first action matching both the selected tag and an inclusion pattern runs. Failure of that command does not trigger a fallback action.
+
+The allow list checks the resolved target path, not each discovered configuration file. Configuration files above the allowed directory can therefore be loaded. The `last` option resets inherited configuration but does not prevent ancestor files from being read.
+
+Each usable action needs at least one inclusion matcher and either `command` or `list_commands`. The schema permits missing matchers, but such an action never matches.
 
 ### Match Methods
 
-You can target files using various matching strategies. Every match method also has a corresponding `_exclude` variant (e.g., `path_match_exclude`) to explicitly ignore files that would otherwise match.
+Actions can match files and directories using the following methods. Every match method has an `_exclude` variant. Each matcher accepts a string or list of strings. Any matching exclusion rejects that action; otherwise, any matching inclusion is sufficient. Multiple inclusion fields are alternatives, not combined requirements.
 
-- **`path_match`**: Standard glob pattern matching (e.g., `*.py`).
+- **`path_match`**: Python `fnmatch.fnmatch` matching against the absolute path. Case sensitivity follows platform path normalization: usually case-sensitive on POSIX and case-insensitive on Windows. `*` can match directory separators. This is not filesystem glob expansion.
 - **`path_match_case`**: Case-sensitive glob pattern matching.
 - **`path_match_case_exclude`**: Case-sensitive glob pattern matching to explicitly ignore files.
 - **`path_regex`**: Regular expression path matching (case-insensitive by default).
@@ -430,23 +442,24 @@ You can target files using various matching strategies. Every match method also 
 
 An action block can include the following optional attributes:
 
-- **`tags`**: A string or list of strings indicating the tag names.
+- **`tags`**: A string or list of strings indicating tag names. Defaults to `main`.
 - **`comment`**: An informative string describing what the action does.
-- **`timeout`**: An integer specifying the maximum execution time in seconds.
-- **`cwd`**: The current working directory for the command.
-- **`stdout`**: Redirect the standard output of the command to the specified file path.
-- **`stderr`**: Redirect the standard error of the command to the specified file path. (If both `stdout` and `stderr` point to the exact same file path, they are combined).
-- **`shell`**: Boolean indicating if the command should be executed within a shell environment.
-- **`command`** / **`list_commands`**: The command string/array to execute. These two are mutually exclusive.
+- **`timeout`**: Integer timeout in seconds for each command, overriding the global value. A value of `0` disables the timeout.
+- **`cwd`**: Working directory for the command. Defaults to the directory containing the `pathaction.yaml` rule-set file. Relative values are resolved against that directory.
+- **`stdout`**: Write command stdout to a file, truncating it before each command. Parent directories must already exist.
+- **`stderr`**: Redirect command stderr with the same path and truncation rules as `stdout`.
+- **`shell`**: Execute through the configured shell when `true`. Defaults to `false`. Use a command string for shell syntax. (`shell: false` are preferred on Windows.)
+- **`command`**: One command, expressed as a string or argument list. With `shell: false`, strings are split with `shlex.split` (`posix=True` on POSIX, `False` on Windows); argument lists are passed directly without shell expansion.
+- **`list_commands`**: A sequence of command strings or argument lists. Commands run sequentially in separate processes, stopping at the first nonzero exit status. Working-directory and shell state changes do not persist between commands. Mutually exclusive with `command`.
 
 ### Global Options
 
-You can define an `options` block at the root of your `.pathaction.yaml` to specify execution defaults:
+A top-level `options` block specifies execution defaults:
 
 - **`shell_path`**: The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell on POSIX and `%COMSPEC%`, or `cmd.exe` if unset, on Windows). Enable `shell: true` for shell features such as pipes, redirection, or built-in commands. Otherwise, prefer `shell: false` with an argument list, especially on Windows, to avoid command-string parsing issues.
 - **`verbose`**: Enable verbose logging.
 - **`debug`**: Enable debug mode.
-- **`timeout`**: A global timeout constraint in seconds.
+- **`timeout`**: Default timeout in seconds for each command. A value of 0 disables it. On expiration, the directly launched process is killed.
 - **`confirm_after_timeout`**: The timeout in seconds when waiting for user input during a `--confirm-after` prompt.
 - **`last`**: If set to `true`, `pathaction` stops loading configurations from higher parent directories.
 
@@ -498,7 +511,7 @@ When pathaction evaluates configuration files from your home directory down to y
 
 #### Example
 
-Suppose you have a global configuration in your home directory:
+For example, define parent configuration in the home directory `~/.pathaction.yaml`:
 
 ```yaml
 # ~/.pathaction.yaml
@@ -520,7 +533,7 @@ actions:
     command: "python {{ file | quote }}"
 ```
 
-Then, you create a local configuration in your project directory to change how Python files are handled:
+Then, create a local configuration in your project directory to change how Python files are handled:
 
 ```yaml
 # ~/project/.pathaction.yaml
