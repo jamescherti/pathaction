@@ -180,7 +180,7 @@ class PathActionCli:
                         "The directory has been permanently added to the "
                         f"allow list: {resolved_source_code}"
                     )
-                    sys.exit(0)
+                    continue
 
                 if not allowed_dirs.is_allowed(resolved_source_code):
                     Util.error(
@@ -219,6 +219,9 @@ class PathActionCli:
                 continue
 
             list_pathaction_cfg.append(pathaction_cfg)
+
+        if self.args.allow_dir:
+            sys.exit(0)
 
         return list_pathaction_cfg
 
