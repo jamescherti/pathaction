@@ -309,14 +309,16 @@ class ActionCommand(UserDict):
                 kwargs["timeout"] = timeout  # type: ignore
 
             with contextlib.ExitStack() as stack:
-                stdout_path: str | None = None
-                stderr_path: str | None = None
+                stdout_path: Path | None = None
+                stderr_path: Path | None = None
 
                 if self.get("stdout"):
-                    stdout_path = self["stdout"]
+                    p_out = Path(self["stdout"])
+                    stdout_path = p_out if p_out.is_absolute() else Path(cwd) / p_out
 
                 if self.get("stderr"):
-                    stderr_path = self["stderr"]
+                    p_err = Path(self["stderr"])
+                    stderr_path = p_err if p_err.is_absolute() else Path(cwd) / p_err
 
                 # Check that BOTH stdout_path and stderr_path exist before
                 # calling .samefile(), otherwise .samefile() raises FileNotFoundError
@@ -326,29 +328,23 @@ class ActionCommand(UserDict):
                     and stderr_path
                     and (
                         (
-                            Path(stdout_path).exists()
-                            and Path(stderr_path).exists()
-                            and Path(stdout_path).samefile(stderr_path)
+                            stdout_path.exists()
+                            and stderr_path.exists()
+                            and stdout_path.samefile(stderr_path)
                         )
-                        or (Path(stdout_path).resolve() == Path(stderr_path).resolve())
+                        or (stdout_path.resolve() == stderr_path.resolve())
                     )
                 ):
-                    kwargs["stdout"] = stack.enter_context(
-                        Path(self["stdout"]).open("wb")
-                    )
+                    kwargs["stdout"] = stack.enter_context(stdout_path.open("wb"))
                     kwargs["stderr"] = kwargs["stdout"]
                     stdout_path = None
                     stderr_path = None
 
                 if stdout_path:
-                    kwargs["stdout"] = stack.enter_context(
-                        Path(self["stdout"]).open("wb")
-                    )
+                    kwargs["stdout"] = stack.enter_context(stdout_path.open("wb"))
 
                 if stderr_path:
-                    kwargs["stderr"] = stack.enter_context(
-                        Path(self["stderr"]).open("wb")
-                    )
+                    kwargs["stderr"] = stack.enter_context(stderr_path.open("wb"))
 
                 if shell:
                     errno = subprocess.call(
