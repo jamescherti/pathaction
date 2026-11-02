@@ -21,7 +21,7 @@ Pass any file or directory as an argument, and `pathaction` executes the right c
 
 This tool is built for software developers or system administrators who manage multiple files and projects across diverse environments.
 
-(If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.)
+Note: If this tool helps your workflow, please show your support by **⭐ starring pathaction on GitHub** and sharing it on your website, blog, Mastodon, Reddit, X, LinkedIn, or other social media platforms to help more Git users discover its benefits.
 
 ### Example
 
@@ -42,18 +42,46 @@ Here is an example of what a `.pathaction.yaml` rule-set file looks like:
 
 ```yaml
 ---
+# Variables
+vars:
+  image_editor: "gimp"
+
+# Pathaction options
+options:
+  verbose: false
+
+  # 'timeout': Prevent the command from hanging by killing it after 60 seconds
+  timeout: 1800
+
 actions:
+  # Python files
   - path_match: "*.py"
     tags: main
+    # This 'command:' is a list. We do not need to use '| quote' here.
     command:
       - "python"
       - "{{ file }}"
 
-  - path_match: "*.jpg"
+  # A specific project
+  - path_match:
+      # 'cwd' is the current directory containing .pathaction.yaml
+      - "{{ cwd }}/my-project-name/*"
+      - "{{ cwd }}/my-project-name"
+    tags:
+      - install
+      - deploy
+    command:
+      - "{{ cwd }}/my-project-name/deploy-script.sh"
+      - "--unattended"
+
+  # Images
+  - mimetype_match: "image/*"
+    timeout: 0  # No timeout for the image editor
     tags:
       - edit
       - show
-    command: "gimp {{ file|quote }}"
+    # We need to use '| quote' here because 'command:' is a string.
+    command: "{{ image_editor | quote }} {{ file | quote }}"
 ```
 
 There are many ways to match paths, including using regular expressions and MIME types. See below for more details.
@@ -120,11 +148,21 @@ Navigate to your project root and create a `.pathaction.yaml` file (e.g., `~/pro
 
 ```yaml
 ---
+# .pathaction.yaml
+
+vars:
+  python_bin: "python"
+
+options:
+  # 'timeout': Prevent the command from hanging by killing it after 60 seconds
+  timeout: 1800  # Set the timeout to 0 to disable it
+  verbose: false
+
 actions:
   - path_match: "*.py"
     tags: main
     command:
-      - "python"
+      - "{{ python_bin }}"
       - "{{ file }}"
 ```
 
@@ -154,32 +192,37 @@ Instead of memorizing different tools and their command-line arguments, you can 
 
 ```yaml
 ---
+# .pathaction.yaml
+
+vars:
+  py_cmd: "python"
+
 actions:
   # Execute the Python script
   - path_match: "*.py"
     tags: main
     command:
-      - "python"
+      - "{{ py_cmd }}"
       - "{{ file }}"
 
   # Run tests
   - path_match: "*.py"
     tags: test
-    command: "pytest -v {{ file|quote }}"
+    command: "pytest -v {{ file | quote }}"
 
   # Type checking
   - path_match: "*.py"
     tags: typecheck
-    command: "mypy {{ file|quote }}"
+    command: "mypy {{ file | quote }}"
 
   # Execute Bash shell scripts
   - path_match: "*.sh"
     tags:
       - main
-    command: "bash {{ file|quote }}"
+    command: "bash {{ file | quote }}"
 ```
 
-You can invoke these specific actions by passing the `-t` (tag) flag:
+You can run these specific actions by passing the `-t` (tag) flag:
 
 ```sh
 pathaction -t typecheck src/utils.py
@@ -192,10 +235,18 @@ You can set up rules to apply Ansible playbooks directly.
 
 ```yaml
 ---
+# .pathaction.yaml
+
+vars:
+  inventory: "inventory.ini"
+
+options:
+  timeout: 300
+
 actions:
   - path_match: "*playbook.yml"
     tags: main
-    command: "ansible-playbook -i inventory.ini {{ file|quote }}"
+    command: "ansible-playbook -i {{ inventory | quote }} {{ file | quote }}"
 ```
 
 ### Example 3: C/C++ Compilation and Execution
@@ -204,18 +255,143 @@ You can use `pathaction` to compile files on the fly and put the output binary i
 
 ```yaml
 ---
+# .pathaction.yaml
+
+vars:
+  compiler: "g++"
+  flags: "-Wall -O2"
+
+options:
+  verbose: true
+
 actions:
   # Compile C++ source code
   - path_match: "*.cpp"
-    tags: build
+    tags: ["compile", "build"]
     cwd: "{{ file|dirname }}"
-    command: "g++ -Wall -O2 {{ file|quote }} -o {{ file|basename|replace('.cpp', '') }}"
+    command: "{{ compiler }} {{ flags }} {{ file | quote }} -o {{ file | replace('.cpp', '') | quote }}"
 
-  # Run the compiled binary
+  # Compile and Run the compiled binary
   - path_match: "*.cpp"
-    tags: run
+    tags: main
     cwd: "{{ file|dirname }}"
-    command: "./{{ file|basename|replace('.cpp', '') }}"
+    list_commands:
+      - "{{ compiler | quote }} {{ flags }} {{ file | quote }} -o {{ file | replace('.cpp', '') | quote }}"
+      - "{{ file|replace('.cpp', '') | quote }}"
+```
+
+### Example 4: Custom Variables and Output Redirection
+
+You can define custom parameters in a `vars` block to avoid hardcoding values in your commands. You can also redirect standard output and standard error to specific files using `stdout` and `stderr`.
+
+```yaml
+---
+# .pathaction.yaml
+
+vars:
+  deploy_env: "staging"
+
+options:
+  verbose: false
+
+actions:
+  - path_match: "*/deploy.sh"
+    tags: main
+    # Redirect stdout and stderr to deploy_stdout.log and deploy_stderr.log in cwd (the current directory).
+    stdout: "{{ cwd ~ 'deploy_stdout.log' | quote }}"
+    stderr: "{{ cwd ~ 'deploy_stderr.log' | quote }}"
+    command: "bash {{ file | quote }} --env {{ deploy_env }}"
+```
+
+### Example 5: Exclusion Rules
+
+You can use `_exclude` matchers to prevent an action from running on specific files, such as test scripts.
+
+```yaml
+---
+# .pathaction.yaml
+
+vars:
+  py_env: "production"
+
+options:
+  timeout: 30
+
+actions:
+  - path_match: "*.py"
+    path_match_exclude: "*/test_*.py"
+    tags: main
+    command: "python {{ file | quote }}"
+```
+
+### Example 6: Shell Features and Piping
+
+By enabling `shell: true`, you can use pipes, redirection, and other built-in shell features directly in your command strings.
+
+```yaml
+---
+# .pathaction.yaml
+
+vars:
+  grep_pattern: "error"
+
+options:
+  timeout: 10
+  shell_path: /bin/sh
+
+actions:
+  - path_match: "*.log"
+    tags: main
+    shell: true
+    command: "cat {{ file | quote }} | grep {{ grep_pattern | quote }} > {{ cwd ~ '/log-summary.txt' | quote }}"
+```
+
+### Example 7: Advanced Matching (MIME Types and Regular Expressions)
+
+Pathaction can match files based on their exact MIME type or evaluate regular expressions against the full path.
+
+```yaml
+---
+# .pathaction.yaml
+
+vars:
+  image_viewer: "feh"
+
+actions:
+  - mimetype_match: "image/*"
+    tags: main
+    command:
+      # This 'command:' is a list. We do not need to use '| quote' here.
+      - "{{ image_viewer }}"
+      - "{{ file }}"
+
+  - path_regex: "^.*/docs/.*\\.txt$"
+    tags: main
+    command: "cat {{ file | quote }}"
+```
+
+### Example 8: Action-Specific Overrides
+
+Action blocks can override global `options` behaviors, such as defining an action-specific timeout or locking execution to a relative working directory.
+
+```yaml
+---
+# .pathaction.yaml
+
+vars:
+  test_runner: "pytest"
+
+options:
+  timeout: 1
+
+actions:
+  - path_match: "*_e2e.py"
+    tags: main
+    # A timeout of 300 overrides the global timeout of 10.
+    timeout: 300
+    cwd: "{{ file|dirname }}/.."
+    shell: true
+    command: "echo \"Current dir: `pwd`\"; echo 'File:' {{ file | quote }}; echo Wait...; read v"
 ```
 
 ## Command-Line Arguments
@@ -326,6 +502,7 @@ Suppose you have a global configuration in your home directory:
 
 ```yaml
 # ~/.pathaction.yaml
+
 vars:
   global_setting: "enabled"
 
@@ -336,11 +513,11 @@ options:
 actions:
   - tags: "main"
     path_match: "*.md"
-    command: "glow {{ file }}"
+    command: "glow {{ file | quote }}"
 
   - tags: "main"
     path_match: "*.py"
-    command: "python3 {{ file }}"
+    command: "python {{ file | quote }}"
 ```
 
 Then, you create a local configuration in your project directory to change how Python files are handled:
@@ -356,7 +533,7 @@ options:
 actions:
   - tags: "main"
     path_match: "*.py"
-    command: "pytest {{ file }}"
+    command: "pytest {{ file | quote }}"
 ```
 
 #### Resulting Behavior in the Project Directory
@@ -377,15 +554,16 @@ actions:
   # Local rules evaluate first
   - tags: "main"
     path_match: "*.py"
-    command: "pytest {{ file }}"
+    command: "pytest {{ file | quote }}"
 
   # Inherited rules evaluate if local rules don't match
   - tags: "main"
     path_match: "*.md"
-    command: "glow {{ file }}"
+    command: "glow {{ file | quote }}"
+
   - tags: "main"
     path_match: "*.py"
-    command: "python3 {{ file }}" # Shadowed by the local rule above
+    command: "python {{ file | quote }}" # Shadowed by the local rule above
 ```
 
 - **Variables and options merge:** The active `vars` dictionary contains both `global_setting` and `local_setting`. The `options` dictionary updates `verbose` to `true` while retaining the inherited `timeout` value of `30`.
