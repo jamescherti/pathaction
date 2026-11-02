@@ -716,7 +716,11 @@ class PathActionCfg:
             str(Path(file_path).parent) if Path(file_path).is_file() else str(file_path)
         )
         env.filters["realpath"] = lambda arg: str(Path(arg).resolve())
-        env.filters["abspath"] = lambda arg: str(Path(arg).absolute())
+        env.filters["abspath"] = lambda arg: (
+            str(Path(arg))
+            if Path(arg).is_absolute()
+            else os.path.abspath(Path(cwd) / arg)  # noqa: PTH100
+        )
         env.filters["joinpath"] = lambda lst: str(Path(*lst))
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
         env.filters["splitcmd"] = lambda arg: shlex.split(
