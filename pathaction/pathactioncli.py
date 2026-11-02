@@ -111,14 +111,14 @@ class PathActionCli:
         # Execute
         first = True
         for pathaction_cfg in list_pathaction_cfg:
-            self.errno = self.main(pathaction_cfg)
-            if self.errno != 0:
-                break
-
             if first:
                 first = False
             else:
                 print()
+
+            self.errno = self.main(pathaction_cfg)
+            if self.errno != 0:
+                break
 
         if self.errno:
             self.ask_user_press_enter()
