@@ -33,6 +33,27 @@ from pathaction.pathactioncfg import ActionCommand, PathActionCfg, platform_quot
 QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 
 
+def test_get_default_shell(monkeypatch: pytest.MonkeyPatch):
+    """Test get_default_shell() fallbacks and edge cases."""
+    from pathaction.pathactioncfg import get_default_shell  # noqa: PLC0415
+
+    if sys.platform != "win32":
+        # Force pwd.getpwuid to raise KeyError so we hit the POSIX edge case logic
+        with patch("pwd.getpwuid", side_effect=KeyError):
+            # 1. SHELL is empty, shutil.which fails
+            monkeypatch.delenv("SHELL", raising=False)
+            with patch("shutil.which", return_value=None):
+                assert get_default_shell() == "/bin/sh"
+
+            # 2. SHELL is empty, shutil.which succeeds
+            with patch("shutil.which", return_value="/usr/bin/sh"):
+                assert get_default_shell() == "/usr/bin/sh"
+
+            # 3. SHELL is set
+            monkeypatch.setenv("SHELL", "/bin/bash")
+            assert get_default_shell() == "/bin/bash"
+
+
 def test_pathactioncfg_cwd_in_cwd():
     """Test using the cwd variable inside the cwd option."""
     source_code = QA_BASEDIR.joinpath("case1", "file3.nh")
@@ -145,9 +166,22 @@ def test_pathactioncfg_jinja_render(monkeypatch: pytest.MonkeyPatch):
         "{{ '/path/to/file.txt' | abspath }}", cwd=anchor
     ) == str(Path(r"/path/to/file.txt").resolve())
 
+    # method: abspath (absolute arg)
+    abs_path_str = str(Path(r"/absolute/path").resolve())
+    abs_path_j2 = abs_path_str.replace("\\", "\\\\")
+    assert (
+        pathactioncfg._jinja2_render(f"{{{{ '{abs_path_j2}' | abspath }}}}", cwd=anchor)
+        == abs_path_str
+    )
+
     # method: joinpath
     assert pathactioncfg._jinja2_render(
         "{{ ['/path', 'to', 'file.txt'] | joinpath }}", cwd=anchor
+    ) == str(Path("/path") / "to" / "file.txt")
+
+    # method: joinpath (multiple arguments)
+    assert pathactioncfg._jinja2_render(
+        "{{ '/path' | joinpath('to', 'file.txt') }}", cwd=anchor
     ) == str(Path("/path") / "to" / "file.txt")
 
     # method: joincmd
@@ -420,30 +454,39 @@ def test_pathactioncfg_stdout_stderr(tmp_path: Path):
     with patch("subprocess.call", side_effect=mock_call):
         # 2 different stdout and stderr
         for use_same_file in [False, True]:
-            tmp_stdout = tmp_path / f"stdout_test_{use_same_file}.txt"
-            tmp_stderr = (
-                tmp_path / f"stderr_test_{use_same_file}.txt"
-                if not use_same_file
-                else tmp_stdout
-            )
+            for use_relative_path in [False, True]:
+                tmp_stdout = (
+                    tmp_path / f"stdout_test_{use_same_file}_{use_relative_path}.txt"
+                )
+                tmp_stderr = (
+                    tmp_path / f"stderr_test_{use_same_file}_{use_relative_path}.txt"
+                    if not use_same_file
+                    else tmp_stdout
+                )
 
-            actioncommand["stdout"] = str(tmp_stdout)
-            actioncommand["stderr"] = str(tmp_stderr)
+                actioncommand["cwd"] = str(tmp_path)
 
-            _, errno = actioncommand.run(sys.executable)
-            assert errno == 0
+                if use_relative_path:
+                    actioncommand["stdout"] = tmp_stdout.name
+                    actioncommand["stderr"] = tmp_stderr.name
+                else:
+                    actioncommand["stdout"] = str(tmp_stdout)
+                    actioncommand["stderr"] = str(tmp_stderr)
 
-            if not use_same_file:
-                with tmp_stdout.open(encoding="utf-8") as fhandler:
-                    assert fhandler.readline().strip() == "stdout_test"
-                with tmp_stderr.open(encoding="utf-8") as fhandler:
-                    assert fhandler.readline().strip() == "stderr_test"
-            else:
-                with tmp_stdout.open(encoding="utf-8") as fhandler:
-                    assert fhandler.read().splitlines() == [
-                        "stdout_test",
-                        "stderr_test",
-                    ]
+                _, errno = actioncommand.run(sys.executable)
+                assert errno == 0
+
+                if not use_same_file:
+                    with tmp_stdout.open(encoding="utf-8") as fhandler:
+                        assert fhandler.readline().strip() == "stdout_test"
+                    with tmp_stderr.open(encoding="utf-8") as fhandler:
+                        assert fhandler.readline().strip() == "stderr_test"
+                else:
+                    with tmp_stdout.open(encoding="utf-8") as fhandler:
+                        assert fhandler.read().splitlines() == [
+                            "stdout_test",
+                            "stderr_test",
+                        ]
 
 
 def test_pathactioncfg_jinja_extra_filters():
@@ -594,6 +637,29 @@ def test_windows_shell_builtin_pipe_and_redirection(
     assert returncode == 0, stderr.read_bytes()
     assert output.is_file(), stderr.read_bytes()
     assert output.read_bytes().strip() == b"PATHACTION_OK"
+
+
+@patch("os.access", return_value=True)
+def test_pathactioncfg_sequential_vars(mock_access, tmp_path: Path):
+    """Test sequential rendering of vars and options within the same config."""
+    cfg_file = tmp_path / ".pathaction.yaml"
+    cfg_file.write_text(
+        "vars:\n"
+        "  var1: 'hello'\n"
+        "  var2: '{{ var1 }} world'\n"
+        "options:\n"
+        "  shell_path: '{{ var2 }} shell'\n"
+        "actions:\n"
+        "  - path_match: '*'\n"
+        "    command: 'dummy'\n",
+        encoding="utf-8",
+    )
+    pathactioncfg = PathActionCfg(source_code=str(tmp_path / "test.py"))
+    pathactioncfg.load_all_cfg(limit=1)
+
+    assert pathactioncfg.cfg["vars"]["var1"] == "hello"
+    assert pathactioncfg.cfg["vars"]["var2"] == "hello world"
+    assert pathactioncfg.cfg["options"]["shell_path"] == "hello world shell"
 
 
 def test_pathactioncfg_merge_parent_child_dirs(tmp_path: Path):

@@ -40,16 +40,37 @@ def allowed_dirs():
     return allow_dirs
 
 
-def test_pathactioncli_dir_not_allowed():
-    """Test CLI exit code when the target directory is not allowed."""
-    allowed_dirs = AllowedPaths()
-    argv = [sys.argv[0], str(QA_BASEDIR.joinpath("case1", "file.sh"))]
+@patch("pathaction.util.Util.error")
+def test_pathactioncli_dir_not_allowed(mock_error):
+    """Test CLI exit code when the target file's directory is not allowed."""
+    allowed_dirs = AllowedPaths()  # Do not use fixture; ensure it stays unauthorized
+    target_file = QA_BASEDIR.joinpath("case1", "file.sh")
+    argv = [sys.argv[0], str(target_file)]
     with patch.object(sys, "argv", argv):
         # Test success
         with pytest.raises(SystemExit) as exitinfo:
             PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
 
         assert exitinfo.value.code == 1
+
+    mock_error.assert_called_once()
+    assert f"not allowed: '{target_file.parent}'" in mock_error.call_args[0][0]
+
+
+@patch("pathaction.util.Util.error")
+def test_pathactioncli_dir_not_allowed_directory(mock_error):
+    """Test CLI exit code when a directory is passed and it is not allowed."""
+    allowed_dirs = AllowedPaths()  # Do not use fixture; ensure it stays unauthorized
+    target_dir = QA_BASEDIR.joinpath("case1")
+    argv = [sys.argv[0], str(target_dir)]
+    with patch.object(sys, "argv", argv):
+        with pytest.raises(SystemExit) as exitinfo:
+            PathActionCli(limit_loop=1, limit_load_cfg=1, allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 1
+
+    mock_error.assert_called_once()
+    # Verify it prints the target directory itself, not its parent
+    assert f"not allowed: '{target_dir}'" in mock_error.call_args[0][0]
 
 
 def test_pathactioncli(allowed_dirs: AllowedPaths):
@@ -154,6 +175,20 @@ def test_pathactioncli_dir_permission_flags(tmp_path: Path):
         ):
             PathActionCli(allowed_dirs=allowed_dirs)
         assert exitinfo.value.code == 0
+        assert allowed_dirs.is_allowed(target_dir)
+
+        # Multiple --allow-dir paths (should continue processing and succeed with 0)
+        with (
+            patch.object(
+                sys,
+                "argv",
+                [sys.argv[0], "--allow-dir", str(target_dir), str(target_dir.parent)],
+            ),
+            pytest.raises(SystemExit) as exitinfo,
+        ):
+            PathActionCli(allowed_dirs=allowed_dirs)
+        assert exitinfo.value.code == 0
+        assert allowed_dirs.is_allowed(target_dir.parent)
 
         # --list-allowed-dirs (should succeed with exit code 0)
         with (
