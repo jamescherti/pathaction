@@ -498,7 +498,7 @@ def test_pathactioncfg_jinja_nested_structures():
         [anchor],
         42,
     ]
-    assert pathactioncfg._jinja2_render(42, cwd=anchor) == 42  # noqa: PLR2004
+    assert pathactioncfg._jinja2_render(42, cwd=anchor) == 42
 
 
 def test_pathactioncfg_exclude_rules():
@@ -594,3 +594,71 @@ def test_windows_shell_builtin_pipe_and_redirection(
     assert returncode == 0, stderr.read_bytes()
     assert output.is_file(), stderr.read_bytes()
     assert output.read_bytes().strip() == b"PATHACTION_OK"
+
+
+def test_pathactioncfg_merge_parent_child_dirs(tmp_path: Path):
+    """Test merging vars, options, and actions from parent and child directories."""
+    # 1. Setup Parent Directory and Config
+    parent_dir = tmp_path
+    parent_cfg = parent_dir / ".pathaction.yaml"
+    parent_cfg.write_text(
+        "vars:\n"
+        "  parent_var: 'parent_value'\n"
+        "  shared_var: 'parent_value'\n"
+        "options:\n"
+        "  timeout: 42\n"
+        "  verbose: false\n"
+        "actions:\n"
+        "  - path_match: '*'\n"
+        "    tags: 'parent_tag'\n"
+        "    command: 'parent_cmd'\n",
+        encoding="utf-8",
+    )
+
+    # 2. Setup Child Directory and Config
+    child_dir = parent_dir / "child"
+    child_dir.mkdir()
+    child_cfg = child_dir / ".pathaction.yaml"
+    child_cfg.write_text(
+        "vars:\n"
+        "  child_var: 'child_value'\n"
+        "  shared_var: 'child_value'\n"
+        "options:\n"
+        "  verbose: true\n"
+        "actions:\n"
+        "  - path_match: '*'\n"
+        "    tags: 'child_tag'\n"
+        "    command: 'child_cmd'\n",
+        encoding="utf-8",
+    )
+
+    # 3. Target file inside the child directory
+    target_file = child_dir / "test.py"
+    target_file.touch()
+
+    # 4. Load configuration
+    pathactioncfg = PathActionCfg(source_code=str(target_file))
+    loaded = pathactioncfg.load_all_cfg(limit=5)
+
+    # Verify both configurations were loaded
+    assert len(loaded) == 2
+    assert str(parent_cfg.resolve()) in loaded
+    assert str(child_cfg.resolve()) in loaded
+
+    # 5. Verify Vars are merged (child overrides parent for shared keys)
+    assert pathactioncfg.cfg["vars"]["parent_var"] == "parent_value"
+    assert pathactioncfg.cfg["vars"]["child_var"] == "child_value"
+    assert pathactioncfg.cfg["vars"]["shared_var"] == "child_value"
+
+    # 6. Verify Options are merged (child overrides parent for shared keys)
+    assert pathactioncfg.cfg["options"]["timeout"] == 42
+    assert pathactioncfg.cfg["options"]["verbose"] is True
+
+    # 7. Verify Actions are merged and accessible by their respective tags
+    action_parent = pathactioncfg.find_command("parent_tag")
+    assert action_parent is not None
+    assert action_parent["command"] == "parent_cmd"
+
+    action_child = pathactioncfg.find_command("child_tag")
+    assert action_child is not None
+    assert action_child["command"] == "child_cmd"
