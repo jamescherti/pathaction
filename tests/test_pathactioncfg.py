@@ -28,7 +28,13 @@ from unittest.mock import patch
 import pytest
 
 from pathaction.exceptions import PathActionError
-from pathaction.pathactioncfg import ActionCommand, PathActionCfg, platform_quote
+from pathaction.pathactioncfg import (
+    ActionCommand,
+    MatchMethods,
+    PathActionCfg,
+    get_default_shell,
+    platform_quote,
+)
 
 QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 
@@ -52,6 +58,59 @@ def test_get_default_shell(monkeypatch: pytest.MonkeyPatch):
             # 3. SHELL is set
             monkeypatch.setenv("SHELL", "/bin/bash")
             assert get_default_shell() == "/bin/bash"
+
+
+def test_win32_shell_and_quote():
+    """Test win32 specific functions."""
+    with patch("sys.platform", "win32"):
+        # quote
+        assert platform_quote("test arg") == '"test arg"'
+
+        # default shell
+        with (
+            patch.dict("os.environ", {"COMSPEC": "cmd.exe"}),
+            patch("shutil.which", return_value="C:\\Windows\\System32\\cmd.exe"),
+        ):
+            assert get_default_shell() == "C:\\Windows\\System32\\cmd.exe"
+
+
+def test_mimetype_exact_match():
+    """Test exact mimetype match method."""
+    with patch("mimetypes.guess_type", return_value=("text/plain", None)):
+        assert MatchMethods.mimetype("file.txt", "text/plain") is True
+        assert MatchMethods.mimetype("file.txt", "text/html") is False
+
+
+def test_mimetype_glob_match():
+    """Test glob mimetype match method."""
+    with patch("mimetypes.guess_type", return_value=("text/plain", None)):
+        assert MatchMethods.mimetype_match("file.txt", "text/*") is True
+        assert MatchMethods.mimetype_match("file.txt", "image/*") is False
+
+
+def test_action_command_empty_cmd():
+    """Test empty command error."""
+    action = ActionCommand(".pathaction.yaml", {"command": "   ", "shell": False})
+    with pytest.raises(PathActionError, match="the command is empty"):
+        action.run(sys.executable)
+
+
+def test_action_command_absolute_cwd():
+    """Test absolute path handling in action cwd."""
+    cfg = PathActionCfg(str(QA_BASEDIR / "case1" / "file.py"))
+    action = ActionCommand(
+        str(QA_BASEDIR / "case1" / ".pathaction.yaml"),
+        {"command": "ls", "cwd": "/absolute/path/dir"},
+    )
+    cwd = cfg.get_action_cmd_cwd(action)
+    assert cwd == os.path.normpath("/absolute/path/dir")
+
+
+def test_load_all_cfg_root_dir():
+    """Test limit boundary when resolving from root directory."""
+    cfg = PathActionCfg("/")
+    cfg.load_all_cfg(limit=5)
+    # Ensures no infinite loop and gracefully stops at root.
 
 
 def test_pathactioncfg_cwd_in_cwd():
