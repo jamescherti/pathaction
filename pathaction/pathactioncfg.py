@@ -64,7 +64,8 @@ def get_default_shell() -> str:
         # (for example, docker run --user 10001:10001), that UID often has no entry in
         # /etc/passwd. In this specific case, calling pwd.getpwuid(os.getuid()) raises
         # KeyError.
-        return str(os.environ.get("SHELL")) or str(shutil.which("sh"))
+        os_shell = os.environ.get("SHELL")
+        return (str(os_shell) if os_shell else None) or shutil.which("sh") or "/bin/sh"
 
 
 def platform_quote(text: str) -> str:
