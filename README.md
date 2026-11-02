@@ -314,6 +314,94 @@ Pathaction walks from the directory containing the file passed to it and merges 
 
 There is a security measure by default: loading rules is allowed only in directories that have been explicitly permitted using `pathaction --allow-dir ~/dir/projects/`, which enables access to `~/dir/projects/` and all its subdirectories. If the entire home directory is allowed with `pathaction --allow-dir ~/`, rules can be loaded from any directory within the home directory.
 
+### .pathaction.yaml files cascade up the tree like .gitignore. If home and project .pathaction.yaml define the same tag, does the nearest .pathaction.yaml file override just that action or the whole rule for that file type?
+
+The cascade behavior in pathaction merges `vars`, `options`, and `actions`.
+
+When pathaction evaluates configuration files from your home directory down to your current working directory, it prepends local actions to the inherited list. This means local rules take precedence, but global rules for other file types remain active.
+
+#### Example
+
+Suppose you have a global configuration in your home directory:
+
+```yaml
+# ~/.pathaction.yaml
+vars:
+  global_setting: "enabled"
+
+options:
+  timeout: 30
+  verbose: false
+
+actions:
+  - tags: "main"
+    path_match: "*.md"
+    command: "glow {{ file }}"
+
+  - tags: "main"
+    path_match: "*.py"
+    command: "python3 {{ file }}"
+```
+
+Then, you create a local configuration in your project directory to change how Python files are handled:
+
+```yaml
+# ~/project/.pathaction.yaml
+vars:
+  local_setting: "enabled"
+
+options:
+  verbose: true
+
+actions:
+  - tags: "main"
+    path_match: "*.py"
+    command: "pytest {{ file }}"
+```
+
+#### Resulting Behavior in the Project Directory
+
+* **Variables and options merge:** The active `vars` dictionary contains both `global_setting` and `local_setting`. The `options` dictionary updates `verbose` to `true` while retaining the inherited `timeout` value of `30`.
+* **Actions merge (local priority):** The active `actions` list contains the local `pytest` command for `*.py` files and the inherited `glow` command for `*.md` files.
+* Because the local `*.py` rule is evaluated first, it overrides the global `*.py` rule.
+
+Here is what the configuration looks like internally after pathaction merges the two files:
+
+```yaml
+# Internal evaluated state for ~/project/
+vars:
+  global_setting: "enabled"
+  local_setting: "enabled"
+
+options:
+  timeout: 30
+  verbose: true
+
+actions:
+  # Local rules evaluate first
+  - tags: "main"
+    path_match: "*.py"
+    command: "pytest {{ file }}"
+
+  # Inherited rules evaluate if local rules don't match
+  - tags: "main"
+    path_match: "*.md"
+    command: "glow {{ file }}"
+  - tags: "main"
+    path_match: "*.py"
+    command: "python3 {{ file }}" # Shadowed by the local rule above
+```
+
+### This tool feels like "I couldn't remember the commands and did not want to read the README, so I built a new tool where I have to remember the commands"
+
+The intent is the exact opposite.
+
+The problem pathaction addresses is context switching. When you work across multiple ecosystems daily (such as Python, Node.js, Ansible, and Go), every project has its own specific way to run, build, test, or lint. You end up having to memorize many different toolchains or constantly check the README for every repository.
+
+The goal of pathaction is to eliminate that mental overhead. You define the `.pathaction.yaml` configuration once. After that, you do not have to remember any of the underlying commands. You just run one unified command, or press a single hotkey in Emacs or Vim, and it executes the correct toolchain based on the exact file type or directory you are currently looking at.
+
+It acts as a context-aware Makefile. You only ever have to interact with one interface, regardless of the language or framework you are working in at that moment.
+
 ### Why use pathaction when I can just run the specific target command directly?
 
 If you are running a simple one-off command like `python script.py` in a terminal, typing the command directly is faster. That is not the problem `pathaction` solves.

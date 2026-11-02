@@ -560,7 +560,7 @@ class PathActionCfg:
                 action_cmd = ActionCommand(path_cfg, action_cmd)
                 new_actions.append(action_cmd)
 
-            self.cfg["actions"] = new_actions
+            self.cfg["actions"] = new_actions + self.cfg["actions"]
 
         # Checks
         shell_target = (
@@ -634,6 +634,9 @@ class PathActionCfg:
                     loaded_cfg_files = []
                     if self.load_cfg(yaml_path):
                         loaded_cfg_files.append(yaml_path)
+
+                    # Prevent 'last: true' from resetting child configurations
+                    self.cfg["options"]["last"] = False
             except schema.SchemaError as err:
                 if schema_error is None:
                     schema_error = str(err)
