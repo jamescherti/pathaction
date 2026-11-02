@@ -27,5 +27,5 @@ set -x
 rm -f .coverage coverage.json
 ruff check pathaction/*.py tests/*.py
 mypy pathaction/*.py tests/*.py
-python -m pytest -p no:libtmux -v --cov=. --cov-report=term-missing \
+python -m pytest -p no:libtmux -v -v --cov=. --cov-report=term-missing \
   --cov-report=json tests/*

@@ -49,7 +49,7 @@ def test_actioncommand_schema():
     assert actioncommand["path_cfg"] == path_cfg
     assert actioncommand["comment"] == ""
     assert actioncommand["shell"] is False
-    assert actioncommand["cwd"] == ""
+    assert actioncommand["cwd"] == str(Path(path_cfg).absolute().parent)
     assert issubclass(ActionCommand, UserDict) is True
 
 

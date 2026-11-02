@@ -184,7 +184,7 @@ class ActionCommand(UserDict):
         "tags": "main",
     }
 
-    def __init__(self, path_cfg: str, action_dict: dict) -> None:
+    def __init__(self, path_cfg: str | Path, action_dict: dict) -> None:
         """Initialize the ActionCommand class."""
         super().__init__()
 
@@ -195,9 +195,16 @@ class ActionCommand(UserDict):
         for item in (self.default_values, action_dict):
             self.update(deepcopy(item))
 
-        parent = Path(path_cfg).parent
-        self.default_cwd = "" if parent == Path() else str(parent)
-        self["path_cfg"] = str(path_cfg)
+        if path_cfg:
+            path_cfg = Path(path_cfg)
+            path_cfg_parent = Path(path_cfg).absolute().parent
+            self.default_cwd = "" if path_cfg_parent == Path() else str(path_cfg_parent)
+            self["path_cfg"] = str(path_cfg)
+        else:
+            # TODO path_cfg shouldn't be empty
+            self.default_cwd = ""
+            self["path_cfg"] = ""
+
         if "cwd" not in self:
             self["cwd"] = self.default_cwd
 
