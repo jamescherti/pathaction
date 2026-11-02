@@ -721,7 +721,11 @@ class PathActionCfg:
             if Path(arg).is_absolute()
             else os.path.abspath(Path(cwd) / arg)  # noqa: PTH100
         )
-        env.filters["joinpath"] = lambda lst: str(Path(*lst))
+        env.filters["joinpath"] = lambda first, *rest: (
+            str(Path(*first, *rest))
+            if isinstance(first, (list, tuple))
+            else str(Path(first, *rest))
+        )
         env.filters["joincmd"] = lambda lst: subprocess.list2cmdline(lst)  # noqa: PLW0108
         env.filters["splitcmd"] = lambda arg: shlex.split(
             arg, posix=(sys.platform != "win32")
