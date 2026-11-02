@@ -97,13 +97,14 @@ def test_action_command_empty_cmd():
 
 def test_action_command_absolute_cwd():
     """Test absolute path handling in action cwd."""
+    abs_cwd = os.path.abspath("/absolute/path/dir")  # noqa: PTH100
     cfg = PathActionCfg(str(QA_BASEDIR / "case1" / "file.py"))
     action = ActionCommand(
         str(QA_BASEDIR / "case1" / ".pathaction.yaml"),
-        {"command": "ls", "cwd": "/absolute/path/dir"},
+        {"command": "ls", "cwd": abs_cwd},
     )
     cwd = cfg.get_action_cmd_cwd(action)
-    assert cwd == os.path.normpath("/absolute/path/dir")
+    assert cwd == os.path.normpath(abs_cwd)
 
 
 def test_load_all_cfg_root_dir():
