@@ -183,9 +183,14 @@ class PathActionCli:
                     continue
 
                 if not allowed_dirs.is_allowed(resolved_source_code):
+                    disallowed_dir = (
+                        resolved_source_code
+                        if resolved_source_code.is_dir()
+                        else resolved_source_code.parent
+                    )
                     Util.error(
                         "The following directory is not "
-                        f"allowed: '{resolved_source_code.parent}'\n"
+                        f"allowed: '{disallowed_dir}'\n"
                         "You can allow the directory or one of its "
                         "parent directories with the command-line "
                         "option '--allow-dir'."
