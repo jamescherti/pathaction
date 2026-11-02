@@ -483,7 +483,11 @@ class PathActionCfg:
                 )
 
                 for pattern in list_patterns:
-                    pattern = self._jinja2_render(pattern, cwd=cur_action_cmd.cwd)
+                    pattern = self._jinja2_render(
+                        pattern,
+                        cwd=cur_action_cmd.cwd,
+                        default_cwd=str(cur_action_cmd.default_cwd),
+                    )
 
                     if match_method(abs_source_code, str(pattern)):
                         if match_is_include:
@@ -521,7 +525,11 @@ class PathActionCfg:
             if key in ("cwd", "path_cfg"):
                 continue
 
-            action_cmd[key] = self._jinja2_render(action_cmd[key], cwd=action_cmd.cwd)
+            action_cmd[key] = self._jinja2_render(
+                action_cmd[key],
+                cwd=action_cmd.cwd,
+                default_cwd=str(action_cmd.default_cwd),
+            )
 
         return action_cmd
 
@@ -654,7 +662,9 @@ class PathActionCfg:
 
         return loaded_cfg_files
 
-    def _jinja2_render_string(self, string: str, cwd: str) -> str:
+    def _jinja2_render_string(
+        self, string: str, cwd: str, default_cwd: str | None = None
+    ) -> str:
         """Render a Jinja2 string."""
         source_code_str = str(self.source_code.absolute())
         env = jinja2.Environment(  # nosec B701
@@ -751,13 +761,21 @@ class PathActionCfg:
         j2_vars.update(self.cfg["vars"])
 
         j2_vars.update(
-            {"file": source_code_str, "env": self.env, "cwd": cwd, "pathsep": os.sep}
+            {
+                "file": source_code_str,
+                "env": self.env,
+                "cwd": default_cwd if default_cwd is not None else cwd,
+                "pathsep": os.sep,
+            }
         )
 
         return j2_template.render(**j2_vars)
 
     def _jinja2_render(
-        self, arg: str | list | dict | int | float | bool, cwd: str
+        self,
+        arg: str | list | dict | int | float | bool,
+        cwd: str,
+        default_cwd: str | None = None,
     ) -> str | list | dict | int | float | bool:
         """Find and replace jinja2 variables like {{ file }}.
 
@@ -768,16 +786,22 @@ class PathActionCfg:
 
         """
         if isinstance(arg, str):
-            return self._jinja2_render_string(string=arg, cwd=cwd)
+            return self._jinja2_render_string(
+                string=arg, cwd=cwd, default_cwd=default_cwd
+            )
 
         if isinstance(arg, dict):
             result_dict = {}
             for key, value in arg.items():
                 if isinstance(value, list):
-                    value = self._jinja2_render(arg=value, cwd=cwd)
+                    value = self._jinja2_render(
+                        arg=value, cwd=cwd, default_cwd=default_cwd
+                    )
 
                 if isinstance(value, str):
-                    value = self._jinja2_render_string(string=value, cwd=cwd)
+                    value = self._jinja2_render_string(
+                        string=value, cwd=cwd, default_cwd=default_cwd
+                    )
 
                 result_dict[key] = value
 
@@ -787,10 +811,14 @@ class PathActionCfg:
             result_list = []
             for item in arg:
                 if isinstance(item, list):
-                    item = self._jinja2_render(arg=item, cwd=cwd)
+                    item = self._jinja2_render(
+                        arg=item, cwd=cwd, default_cwd=default_cwd
+                    )
 
                 if isinstance(item, str):
-                    item = self._jinja2_render_string(string=item, cwd=cwd)
+                    item = self._jinja2_render_string(
+                        string=item, cwd=cwd, default_cwd=default_cwd
+                    )
 
                 result_list.append(item)
 

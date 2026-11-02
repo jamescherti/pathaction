@@ -11,7 +11,7 @@ actions:
       - "true"
       - "doesnotexist"
 
-  - path_match: "{{ cwd|dirname }}/file4.bash"
+  - path_match: "{{ cwd }}/file4.bash"
     tags: main
     cwd: "{{ cwd }}/test_cwd"
     list_commands:

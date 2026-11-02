@@ -788,3 +788,31 @@ def test_pathactioncfg_merge_parent_child_dirs(tmp_path: Path):
     action_child = pathactioncfg.find_command("child_tag")
     assert action_child is not None
     assert action_child["command"] == "child_cmd"
+
+
+def test_pathactioncfg_cwd_variable_vs_filter(tmp_path: Path):
+    """Test that {{ cwd }} variable is the default cwd, but use execution cwd."""
+    cfg_file = tmp_path / ".pathaction.yaml"
+    cfg_file.write_text(
+        "actions:\n"
+        "  - path_match: '{{ cwd }}/source.py'\n"
+        "    cwd: '{{ cwd }}/sub_dir'\n"
+        "    command: 'echo {{ cwd }} {{ \"relative.txt\" | abspath }}'\n",
+        encoding="utf-8",
+    )
+
+    source_code = tmp_path / "source.py"
+    source_code.touch()
+
+    pathactioncfg = PathActionCfg(source_code=str(source_code))
+    pathactioncfg.load_all_cfg(limit=1)
+
+    actioncommand = pathactioncfg.find_command("main")
+    assert actioncommand is not None
+
+    expected_cwd_var = str(tmp_path)
+    expected_execution_cwd = str(tmp_path / "sub_dir")
+    expected_abspath = str(Path(expected_execution_cwd) / "relative.txt")
+
+    assert actioncommand["cwd"] == expected_execution_cwd
+    assert actioncommand["command"] == f"echo {expected_cwd_var} {expected_abspath}"
