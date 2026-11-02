@@ -539,16 +539,20 @@ class PathActionCfg:
         except schema.SchemaError as err:
             raise schema.SchemaError(f"'{abs_yaml_path}': {err}") from err
 
-        # Merge default values
+        # Render vars and options entries individually during configuration loading
+        # rather than bulk re-rendering the entire dictionary. This enables variables
+        # within the same configuration block to reference preceding variables and
+        # avoids redundant evaluation of inherited settings.
         for key in ("vars", "options"):
-            if key in raw_cfg:
-                self.cfg[key].update(raw_cfg[key])
-
-                if key == "options":
-                    self.cfg["options"] = self._jinja2_render(
-                        self.cfg["options"],
+            if key in raw_cfg and isinstance(raw_cfg[key], dict):
+                for sub_key, sub_val in raw_cfg[key].items():
+                    # Temporarily update self.cfg[key] so subsequent vars can reference
+                    # earlier ones
+                    rendered_val = self._jinja2_render(
+                        sub_val,
                         cwd=str(Path(abs_yaml_path).parent),
                     )
+                    self.cfg[key][sub_key] = rendered_val
 
         if "actions" in raw_cfg:
             new_actions = []
