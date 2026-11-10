@@ -116,6 +116,10 @@ class AllowedPaths:
             path: The path to the YAML file where allowed paths will be saved.
         """
         file_path = Path(path)
+        # The --disallow-dir flow saves without creating the parent
+        # directory first, which crashed with FileNotFoundError on a fresh
+        # machine; ensure it exists like the --allow-dir flow does.
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with file_path.open("w", encoding="utf-8") as fhandler:
             yaml.dump(
                 self._gen_saveable_data(), fhandler, default_flow_style=False, indent=2

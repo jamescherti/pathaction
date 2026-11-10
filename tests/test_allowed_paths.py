@@ -91,6 +91,19 @@ def test_allowed_paths_save_and_load_yaml_from_file(tmp_path: Path):
     assert allowed_paths2._temporarily_allowed == set()
 
 
+def test_allowed_paths_save_creates_missing_parent_dirs(tmp_path: Path):
+    """Test saving to a YAML file whose parent directories do not exist."""
+    allowed_paths = AllowedPaths()
+    allowed_paths.add(QA_BASEDIR, permanent=True)
+
+    yaml_file = tmp_path / "missing-parent-dir" / "allowed.yaml"
+    allowed_paths.save_to_yaml(yaml_file)
+
+    allowed_paths2 = AllowedPaths()
+    allowed_paths2.load_from_yaml(yaml_file)
+    assert allowed_paths._permanently_allowed == allowed_paths2._permanently_allowed
+
+
 def test_allowed_paths_is_allowed():
     """Test checking whether a path is allowed."""
     allowed_paths = AllowedPaths()
