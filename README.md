@@ -138,7 +138,7 @@ pip install --user "pathaction[colors,proctitle]"
 
 ### 1. Authorize the target directory
 
-The CLI requires the resolved target path to be inside an allowed directory. To permit targets in an existing projects directory and its descendants, run:
+To execute an action, the resolved target path must be in an allowed directory. To permit targets in an existing projects directory and its descendants, run:
 
 ```sh
 pathaction --allow-dir ~/projects
@@ -426,9 +426,13 @@ options:
                         List permanently allowed directories.
 ```
 
+Use at most one of `--list`, `--allow-dir`, `--disallow-dir`, and `--list-allowed-dirs` per invocation. Omit all four to execute an action.
+
+`--list` requires a file or directory argument. For example, `pathaction --list .` prints configuration paths for the current directory and its ancestors, nearest first, even when the target is outside the allow list. It lists files without opening them or evaluating Jinja templates.
+
 ## Configuration Guide (.pathaction.yaml)
 
-The rule-set files `pathaction.yaml` cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
+The rule-set files (`.pathaction.yaml` or `.pathaction.yml`) cascade hierarchically. When you execute a file, `pathaction` looks for `.pathaction.yaml` in the file's current directory, and then walks up the filesystem tree (parent directories) to find and merge all other `.pathaction.yaml` files. This loading behavior is similar to that of a `.gitignore` file. In case of conflicting rules or configurations, priority is given to the rule set that is located in the directory closest to the specified file.
 
 Discovered files are loaded from ancestor to descendant. `vars` and `options` are shallow-merged by key, with nearer files overriding earlier values. Actions from nearer files are prepended, preserving their order within each file. Only the first action matching both the selected tag and an inclusion pattern runs. Failure of that command does not trigger a fallback action.
 
