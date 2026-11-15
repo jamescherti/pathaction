@@ -182,6 +182,12 @@ class PathActionCli:
                     )
                     continue
 
+                if self.args.list:
+                    config_files = pathaction_cfg.find_cfg_files(self.limit_load_cfg)
+                    for item in reversed(config_files):
+                        print(Path(item).resolve())
+                    continue
+
                 if not allowed_dirs.is_allowed(resolved_source_code):
                     disallowed_dir = (
                         resolved_source_code
@@ -217,11 +223,6 @@ class PathActionCli:
                 self.errno = 1
                 self.ask_user_press_enter()
                 sys.exit(1)
-
-            if self.args.list:
-                for item in reversed(pathaction_cfg.loaded_yaml_path):
-                    print(item)
-                continue
 
             list_pathaction_cfg.append(pathaction_cfg)
 

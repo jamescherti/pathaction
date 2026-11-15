@@ -430,3 +430,29 @@ def test_pathactioncli_confirm_before_and_after(allowed_dirs: AllowedPaths):
     ):
         PathActionCli(limit_loop=2, limit_load_cfg=1, allowed_dirs=allowed_dirs)
     assert exitinfo.value.code == 0
+
+
+@pytest.mark.parametrize("arguments", [["--list", "."], ["-l", "example.py"]])
+def test_list_from_unapproved_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    arguments: list[str],
+) -> None:
+    """List nearby configs without parsing them or granting execution access."""
+    child = tmp_path / "child"
+    child.mkdir()
+    (child / "example.py").touch()
+    configs = [child / ".pathaction.yml", tmp_path / ".pathaction.yaml"]
+    for config in configs:
+        config.write_text("[invalid yaml", encoding="utf-8")
+    monkeypatch.chdir(child)
+    monkeypatch.setattr(sys, "argv", ["pathaction", *arguments])
+    allowed_dirs = AllowedPaths()
+
+    with pytest.raises(SystemExit) as result:
+        PathActionCli(limit_load_cfg=2, allowed_dirs=allowed_dirs)
+
+    assert result.value.code == 0
+    assert capsys.readouterr().out.splitlines() == [str(config) for config in configs]
+    assert not allowed_dirs.is_allowed(child)

@@ -593,9 +593,8 @@ class PathActionCfg:
         self.loaded_yaml_path.append(abs_yaml_path)
         return True
 
-    def load_all_cfg(self, limit: int) -> list[str]:
-        """Find and load all 'pathaction.yaml' files."""
-        self.reset()
+    def find_cfg_files(self, limit: int) -> list[str]:
+        """Find configuration files in parent-first order without opening them."""
         list_cfg_files: list[str] = []
 
         #
@@ -633,6 +632,13 @@ class PathActionCfg:
 
             dirname = dirname.parent
             limit -= 1
+
+        return list_cfg_files
+
+    def load_all_cfg(self, limit: int) -> list[str]:
+        """Find and load all 'pathaction.yaml' files."""
+        self.reset()
+        list_cfg_files = self.find_cfg_files(limit)
 
         #
         # Load cfg files
