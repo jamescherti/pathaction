@@ -322,34 +322,34 @@ class PathActionCli:
             help="Ask the user to run the action again.",
         )
 
-        parser.add_argument(
+        mode_group = parser.add_mutually_exclusive_group(required=False)
+
+        mode_group.add_argument(
             "-l",
             "--list",
             action="store_true",
-            default=False,
             help="List the configuration files that have been found.",
         )
 
-        parser.add_argument(
+        mode_group.add_argument(
             "-d",
             "--allow-dir",
             action="store_true",
-            default=False,
             help="Allow pathaction to be executed in the provided "
             "directory and its subdirectories permanently.",
         )
 
-        parser.add_argument(
+        mode_group.add_argument(
             "--disallow-dir",
             type=str,
             metavar="DIR",
             help="Disallow pathaction from being executed in the provided directory.",
         )
 
-        parser.add_argument(
+        mode_group.add_argument(
             "--list-allowed-dirs",
+            "--list-allowed-dir",
             action="store_true",
-            default=False,
             help="List permanently allowed directories.",
         )
 

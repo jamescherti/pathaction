@@ -406,13 +406,25 @@ actions:
 
 The `pathaction` utility accepts several arguments to control execution behavior:
 
-- `-t`, `--tag`: Execute the action associated with this tag (default is `main`).
-- `-b`, `--confirm-before`: Request confirmation before execution. Once accepted, confirmation is disabled for the remainder of that CLI invocation.
-- `-a`, `--confirm-after`: Ask the user if they want to execute the action again after it finishes (respects the `confirm_after_timeout` configuration).
-- `-l`, `--list`: List `.pathaction.yaml` files that apply to the given target, nearest first, without executing an action.
-- `-d`, `--allow-dir`: Permanently allow targets in the supplied directory and its descendants. This command authorizes the directory and exits without running an action.
-- `--disallow-dir DIR`: Remove an explicitly stored directory from the allow list. This does not create a deny rule; a broader allowed ancestor still permits the target.
-- `--list-allowed-dirs`: Print a list of all permanently allowed directories.
+```
+usage: pathaction [--option] filename
+
+pathaction
+
+positional arguments:
+  N                     Path to the files.
+
+options:
+  -h, --help            show this help message and exit
+  -t, --tag TAG         Execute the action associated with this tag (default: main).
+  -b, --confirm-before  Confirm before executing the action.
+  -a, --confirm-after   Ask the user to run the action again.
+  -l, --list            List the configuration files that have been found.
+  -d, --allow-dir       Allow pathaction to be executed in the provided directory and its subdirectories permanently.
+  --disallow-dir DIR    Disallow pathaction from being executed in the provided directory.
+  --list-allowed-dirs, --list-allowed-dir
+                        List permanently allowed directories.
+```
 
 ## Configuration Guide (.pathaction.yaml)
 
