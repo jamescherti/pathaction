@@ -169,6 +169,7 @@ class ActionCommand(UserDict):
         schema.Optional("timeout"): int,
         schema.Optional("shell"): bool,
         schema.Optional("shell_path"): str,
+        schema.Optional("shell_args"): [str],
         schema.Optional("list_commands"): [
             schema.Or(str, [str])  # type: ignore
         ],
@@ -356,7 +357,12 @@ class ActionCommand(UserDict):
                 if stderr_path:
                     kwargs["stderr"] = stack.enter_context(stderr_path.open("wb"))
 
-                if shell:
+                if shell and "shell_args" in self:
+                    errno = subprocess.call(
+                        [shell_path, *self["shell_args"], str(cmd)],
+                        **kwargs,  # type: ignore
+                    )
+                elif shell:
                     errno = subprocess.call(
                         cmd,
                         shell=True,  # nosec: B602

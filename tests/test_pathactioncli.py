@@ -38,6 +38,19 @@ EXIT_CODE_SH = 64
 EXIT_CODE_NH = 111
 
 
+def test_action_shell_uses_explicit_arguments():
+    """Explicit shell arguments are passed directly to the configured executable."""
+    action = ActionCommand(
+        path_cfg="",
+        action_dict={"command": "script", "shell": True, "shell_args": ["--eval"]},
+    )
+    with patch("subprocess.call", return_value=0) as call:
+        action.run(shell_path="interpreter")
+
+    assert call.call_args.args[0] == ["interpreter", "--eval", "script"]
+    assert "shell" not in call.call_args.kwargs
+
+
 def test_python_action_shell_executes_script(tmp_path, capfd):
     """Run a Python script using Python as the action's shell."""
     config_file = tmp_path / ".pathaction.yaml"
@@ -51,6 +64,7 @@ def test_python_action_shell_executes_script(tmp_path, capfd):
                         "tags": "install",
                         "shell": True,
                         "shell_path": sys.executable,
+                        "shell_args": ["-c"],
                         "command": 'import sys\nprint("Hello world")\n',
                     }
                 ],
