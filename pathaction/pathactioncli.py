@@ -470,10 +470,13 @@ class PathActionCli:
 
             # Shell
             if action.shell:
+                shell_command = action.effective_shell_command(
+                    pathaction_cfg.cfg["options"].get("shell_command")
+                )
                 Util.pcolor(
                     Util.COLOR_TEXT,
-                    subprocess.list2cmdline(action["shell_command"])
-                    if "shell_command" in action
+                    subprocess.list2cmdline(shell_command)
+                    if shell_command is not None
                     else action.get(
                         "shell_path", pathaction_cfg.cfg["options"]["shell_path"]
                     ),
@@ -524,6 +527,7 @@ class PathActionCli:
             shell_path=pathaction_cfg.cfg["options"]["shell_path"],
             timeout=timeout,
             debug=pathaction_cfg.debug,
+            shell_command=pathaction_cfg.cfg["options"].get("shell_command"),
         )
 
         self._print_execution_result(pathaction_cfg, tag, cmd, errno)

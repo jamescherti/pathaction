@@ -130,6 +130,7 @@ class ActionCommand(UserDict):
 
     schema_qa_options: ClassVar[dict[Any, Any]] = {
         schema.Optional("shell_path"): str,
+        schema.Optional("shell_command"): schema.And([str], len),
         schema.Optional("timeout"): int,
         schema.Optional("verbose"): bool,
         schema.Optional("debug"): bool,
@@ -262,8 +263,22 @@ class ActionCommand(UserDict):
         except KeyError as err:
             raise AttributeError(key) from err
 
+    def effective_shell_command(self, default: list[str] | None) -> list[str] | None:
+        """Resolve the interpreter command, respecting action-level overrides."""
+        if "shell_command" in self:
+            return list(self["shell_command"])
+
+        if "shell_path" in self or "shell_args" in self:
+            return None
+
+        return default
+
     def run(
-        self, shell_path: str, timeout: float = 0, debug: bool = False
+        self,
+        shell_path: str,
+        timeout: float = 0,
+        debug: bool = False,
+        shell_command: list[str] | None = None,
     ) -> tuple[str | list, int]:
         """Execute a command.
 
@@ -271,6 +286,7 @@ class ActionCommand(UserDict):
             Tuple containing the command and errno.
         """
         shell_path = self.get("shell_path", shell_path)
+        shell_command = self.effective_shell_command(shell_command)
         first_cmd = True
         if "command" in self:
             list_commands = [self.command]
@@ -366,9 +382,9 @@ class ActionCommand(UserDict):
                 if stderr_path:
                     kwargs["stderr"] = stack.enter_context(stderr_path.open("wb"))
 
-                if shell and "shell_command" in self:
+                if shell and shell_command is not None:
                     errno = subprocess.call(
-                        [*self["shell_command"], str(cmd)],
+                        [*shell_command, str(cmd)],
                         **kwargs,  # type: ignore
                     )
                 elif shell and "shell_args" in self:
@@ -576,6 +592,17 @@ class PathActionCfg:
         except schema.SchemaError as err:
             raise schema.SchemaError(f"'{abs_yaml_path}': {err}") from err
 
+        options = raw_cfg.get("options", {})
+        if "shell_command" in options and "shell_path" in options:
+            print(
+                "Warning: Both shell_command and shell_path are defined in options. "
+                "shell_command takes precedence. Prefer shell_command.",
+                file=sys.stderr,
+            )
+        elif "shell_path" in options:
+            # A nearer legacy setting overrides an inherited shell command.
+            self.cfg["options"].pop("shell_command", None)
+
         # Render vars and options entries individually during configuration loading
         # rather than bulk re-rendering the entire dictionary. This enables variables
         # within the same configuration block to reference preceding variables and
@@ -601,16 +628,17 @@ class PathActionCfg:
             self.cfg["actions"] = new_actions + self.cfg["actions"]
 
         # Checks
-        shell_target = (
-            shutil.which(self.cfg["options"]["shell_path"])
-            or self.cfg["options"]["shell_path"]
-        )
-        if not os.access(shell_target, os.X_OK):
-            err_msg = (
-                f"the shell '{self.cfg['options']['shell_path']}' "
-                "does not exist or is not an executable."
+        if "shell_command" not in self.cfg["options"]:
+            shell_target = (
+                shutil.which(self.cfg["options"]["shell_path"])
+                or self.cfg["options"]["shell_path"]
             )
-            raise PathActionError(err_msg)
+            if not os.access(shell_target, os.X_OK):
+                err_msg = (
+                    f"the shell '{self.cfg['options']['shell_path']}' "
+                    "does not exist or is not an executable."
+                )
+                raise PathActionError(err_msg)
 
         self.loaded_yaml_path.append(abs_yaml_path)
         return True

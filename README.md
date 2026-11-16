@@ -348,7 +348,7 @@ options:
 actions:
   - path_match: "*.log"
     tags: main
-    # Changing shell to true uses shell_command
+    # Use shell_command when shell is set to true.
     shell: true
     command: "cat {{ file | quote }} | grep {{ grep_pattern | quote }} > {{ [cwd, 'log-summary.txt'] | joinpath | quote }}"
 ```
@@ -484,26 +484,26 @@ An action block can include the following optional attributes:
 
 - **`tags`**: A string or list of strings indicating tag names. Defaults to `main`.
 - **`comment`**: An informative string describing what the action does.
-- **`timeout`**: Integer timeout in seconds for each command, overriding the global value. A value of `0` disables the timeout.
 - **`cwd`**: Working directory for the command. Defaults to the directory containing the `pathaction.yaml` rule-set file. Relative values are resolved against that directory.
 - **`stdout`**: Write command stdout to a file, truncating it before each command. Parent directories must already exist.
 - **`stderr`**: Redirect command stderr with the same path and truncation rules as `stdout`.
-- **`shell`**: Execute through the configured shell when `true`. Defaults to `false`. Use a command string for shell syntax.
-- **`shell_command`**: A non-empty list containing an executable and its arguments. With `shell: true`, the command is passed as the final argument to this executable directly. (Overrides the global `options.shell_path` and action-level `shell_path` and `shell_args`. If both `shell_command` and `shell_path` are defined in the same action, a warning recommends using `shell_command`.)
-- **`shell_path`**: Use `shell_command` instead. Shell executable for this action when `shell: true`. Overrides the global `options.shell_path`; if omitted, the global value is used. Like other action strings, this value can contain Jinja2 templates.
 - **`command`**: One command, expressed as a string or argument list. With `shell: false`, strings are split with `shlex.split` (`posix=True` on POSIX, `False` on Windows); argument lists are passed directly without shell expansion.
 - **`list_commands`**: A sequence of command strings or argument lists. Commands run sequentially in separate processes, stopping at the first nonzero exit status. Working-directory and shell state changes do not persist between commands. Mutually exclusive with `command`.
+- **`shell`**: Execute through the configured shell when `true`. Defaults to `false`.
 
 ### Global Options
 
 A top-level `options` block specifies execution defaults:
 
-- **`shell_path`**: Use `shell_command` instead. The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell on POSIX and `%COMSPEC%`, or `cmd.exe` if unset, on Windows). An action can override this value with its own `shell_path`. Enable `shell: true` for shell features such as pipes, redirection, or built-in commands. Otherwise, prefer `shell: false` with an argument list, especially on Windows, to avoid command-string parsing issues.
 - **`verbose`**: Enable verbose logging.
 - **`debug`**: Enable debug mode.
-- **`timeout`**: Default timeout in seconds for each command. A value of 0 disables it. On expiration, the directly launched process is killed.
 - **`confirm_after_timeout`**: The timeout in seconds when waiting for user input during a `--confirm-after` prompt.
 - **`last`**: If set to `true`, `pathaction` stops loading configurations from higher parent directories.
+
+### Global and Action configuration
+
+- **`timeout`**: Integer timeout in seconds for each command. A value of `0` disables the timeout.
+- **`shell_command`**: Used only when `shell` is `true`. A non-empty list containing an executable and its arguments. Pathaction appends the action's command to this list before execution. For example, `shell_command: ["python3", "-c"]` with `command: 'print("Hello")'` runs `python3 -c 'print("Hello")'`. (An action-level `shell_command` overrides the global setting.)
 
 ## Jinja2 Variables and Filters
 

@@ -38,6 +38,97 @@ EXIT_CODE_SH = 64
 EXIT_CODE_NH = 111
 
 
+@pytest.mark.parametrize("action_shell", [None, ["action-shell", "--eval"]])
+def test_global_shell_command(tmp_path, action_shell):
+    """Use the global command unless the action supplies its own."""
+    action = {"path_match": "*", "shell": True, "command": "script"}
+    if action_shell:
+        action["shell_command"] = action_shell
+    config_file = tmp_path / ".pathaction.yaml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {"options": {"shell_command": [sys.executable, "-c"]}, "actions": [action]}
+        ),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file.txt"))
+    cfg.load_cfg(str(config_file))
+    selected = cfg.find_command("main")
+    assert selected is not None
+    cli = PathActionCli.__new__(PathActionCli)
+    cli.args = argparse.Namespace(tag="main", confirm_before=False)
+    expected = action_shell or [sys.executable, "-c"]
+    with patch("subprocess.call", return_value=0) as call:
+        assert cli.run_from_yaml(cfg, selected) == 0
+    assert call.call_args.args[0] == [*expected, "script"]
+
+
+def test_global_shell_command_executes_python(tmp_path, capfd):
+    """Execute a real Python script using a global shell command."""
+    config_file = tmp_path / ".pathaction.yaml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {
+                "options": {"shell_command": [sys.executable, "-c"]},
+                "actions": [
+                    {
+                        "path_match": "*",
+                        "shell": True,
+                        "command": 'print("hello global")',
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file"))
+    cfg.load_cfg(str(config_file))
+    cli = PathActionCli.__new__(PathActionCli)
+    cli.args = argparse.Namespace(tag="main", confirm_before=False)
+    selected = cfg.find_command("main")
+    assert selected is not None
+    assert cli.run_from_yaml(cfg, selected) == 0
+    assert "hello global" in capfd.readouterr().out
+
+
+def test_action_shell_path_overrides_global_shell_command():
+    """An existing action-level shell path overrides the global command."""
+    action = ActionCommand(
+        "", {"shell": True, "shell_path": "local-shell", "command": "x"}
+    )
+    with patch("subprocess.call", return_value=0) as call:
+        action.run(shell_path="global-shell", shell_command=["interpreter", "-c"])
+    assert call.call_args.kwargs["executable"] == "local-shell"
+    assert call.call_args.kwargs["shell"] is True
+
+
+def test_global_shell_settings_warn_and_nearer_path_overrides(tmp_path, capsys):
+    """Warn on conflicting options and honor a nearer legacy path."""
+    parent = tmp_path / "parent.yaml"
+    parent.write_text(
+        yaml.safe_dump(
+            {
+                "options": {
+                    "shell_path": sys.executable,
+                    "shell_command": [sys.executable, "-c"],
+                },
+                "actions": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    child = tmp_path / "child.yaml"
+    child.write_text(
+        yaml.safe_dump({"options": {"shell_path": sys.executable}, "actions": []}),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file"))
+    cfg.load_cfg(str(parent))
+    assert "Prefer shell_command" in capsys.readouterr().err
+    cfg.load_cfg(str(child))
+    assert "shell_command" not in cfg.cfg["options"]
+
+
 def test_shell_command_executes_python(tmp_path, capfd):
     """An action can execute a script with an explicit interpreter command."""
     config_file = tmp_path / ".pathaction.yaml"
@@ -68,7 +159,7 @@ def test_shell_command_executes_python(tmp_path, capfd):
     assert "Hello world" in captured.out
 
 
-def test_shell_command_takes_precedence_over_action_shell_path():
+def test_shell_command_takes_precedence_over_action_shell_path(capsys):
     """Conflicting action settings warn and use shell_command."""
     action = ActionCommand(
         "",
@@ -80,6 +171,7 @@ def test_shell_command_takes_precedence_over_action_shell_path():
             "command": "script",
         },
     )
+    assert "Prefer shell_command" in capsys.readouterr().err
     with patch("subprocess.call", return_value=0) as call:
         action.run(shell_path="global-shell")
     assert call.call_args.args[0] == ["new-shell", "--eval", "script"]
