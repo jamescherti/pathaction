@@ -168,6 +168,7 @@ class ActionCommand(UserDict):
         schema.Optional("comment"): str,
         schema.Optional("timeout"): int,
         schema.Optional("shell"): bool,
+        schema.Optional("shell_path"): str,
         schema.Optional("list_commands"): [
             schema.Or(str, [str])  # type: ignore
         ],
@@ -259,6 +260,7 @@ class ActionCommand(UserDict):
         Returns:
             Tuple containing the command and errno.
         """
+        shell_path = self.get("shell_path", shell_path)
         first_cmd = True
         if "command" in self:
             list_commands = [self.command]

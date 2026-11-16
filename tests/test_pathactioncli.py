@@ -25,6 +25,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import yaml
 
 from pathaction import command_line_interface
 from pathaction.allowed_paths import AllowedPaths
@@ -35,6 +36,76 @@ from pathaction.pathactioncli import PathActionCli
 QA_BASEDIR = Path(__file__).resolve().parent / "pathactioncfg_cases"
 EXIT_CODE_SH = 64
 EXIT_CODE_NH = 111
+
+
+def test_python_action_shell_executes_script(tmp_path, capfd):
+    """Run a Python script using Python as the action's shell."""
+    config_file = tmp_path / ".pathaction.yaml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {
+                "options": {"shell_path": sys.executable},
+                "actions": [
+                    {
+                        "path_match": "*",
+                        "tags": "install",
+                        "shell": True,
+                        "shell_path": sys.executable,
+                        "command": 'import sys\nprint("Hello world")\n',
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file.txt"))
+    cfg.load_cfg(str(config_file))
+    action = cfg.find_command("install")
+    assert action is not None
+
+    _, returncode = action.run(shell_path=cfg.cfg["options"]["shell_path"])
+    captured = capfd.readouterr()
+    assert returncode == 0, captured.err
+    assert "Hello world" in captured.out
+
+
+@pytest.mark.parametrize("override", [True, False])
+def test_action_shell_path_overrides_global(tmp_path, override):
+    """An action's shell path takes precedence, with the global path as fallback."""
+    action = {"path_match": "*", "command": "echo test", "shell": True}
+    if override:
+        action["shell_path"] = "{{ action_shell }}"
+
+    action_shell = str(tmp_path / "action-shell")
+    config_file = tmp_path / ".pathaction.yaml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {
+                "vars": {"action_shell": action_shell},
+                "options": {"shell_path": sys.executable, "verbose": True},
+                "actions": [action],
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file.txt"))
+    cfg.load_cfg(str(config_file))
+    selected = cfg.find_command("main")
+    assert selected is not None
+
+    cli = PathActionCli.__new__(PathActionCli)
+    cli.args = argparse.Namespace(tag="main", confirm_before=False)
+    expected_shell = action_shell if override else sys.executable
+    with patch("pathaction.pathactioncli.Util.pcolor") as print_color:
+        cli.show_action_infos(cfg, selected)
+    assert any(
+        call.args[1] == expected_shell and call.kwargs.get("prefix") == "[SHELL] "
+        for call in print_color.call_args_list
+    )
+
+    with patch("subprocess.call", return_value=0) as call:
+        assert cli.run_from_yaml(cfg, selected) == 0
+    assert call.call_args.kwargs["executable"] == expected_shell
 
 
 @pytest.fixture()

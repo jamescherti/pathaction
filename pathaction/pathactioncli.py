@@ -472,7 +472,9 @@ class PathActionCli:
             if action.shell:
                 Util.pcolor(
                     Util.COLOR_TEXT,
-                    pathaction_cfg.cfg["options"]["shell_path"],
+                    action.get(
+                        "shell_path", pathaction_cfg.cfg["options"]["shell_path"]
+                    ),
                     prefix="[SHELL] ",
                 )
 
