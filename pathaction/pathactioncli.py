@@ -472,7 +472,9 @@ class PathActionCli:
             if action.shell:
                 Util.pcolor(
                     Util.COLOR_TEXT,
-                    action.get(
+                    subprocess.list2cmdline(action["shell_command"])
+                    if "shell_command" in action
+                    else action.get(
                         "shell_path", pathaction_cfg.cfg["options"]["shell_path"]
                     ),
                     prefix="[SHELL] ",

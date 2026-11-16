@@ -38,6 +38,53 @@ EXIT_CODE_SH = 64
 EXIT_CODE_NH = 111
 
 
+def test_shell_command_executes_python(tmp_path, capfd):
+    """An action can execute a script with an explicit interpreter command."""
+    config_file = tmp_path / ".pathaction.yaml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {
+                "options": {"shell_path": sys.executable},
+                "actions": [
+                    {
+                        "path_match": "*",
+                        "shell": True,
+                        "shell_command": ["{{ interpreter }}", "-c"],
+                        "command": 'print("Hello world")',
+                    }
+                ],
+                "vars": {"interpreter": sys.executable},
+            }
+        ),
+        encoding="utf-8",
+    )
+    cfg = PathActionCfg(str(tmp_path / "file.txt"))
+    cfg.load_cfg(str(config_file))
+    action = cfg.find_command("main")
+    assert action is not None
+    _, returncode = action.run(shell_path=cfg.cfg["options"]["shell_path"])
+    captured = capfd.readouterr()
+    assert returncode == 0, captured.err
+    assert "Hello world" in captured.out
+
+
+def test_shell_command_takes_precedence_over_action_shell_path():
+    """Conflicting action settings warn and use shell_command."""
+    action = ActionCommand(
+        "",
+        {
+            "shell": True,
+            "shell_path": "old-shell",
+            "shell_args": ["-c"],
+            "shell_command": ["new-shell", "--eval"],
+            "command": "script",
+        },
+    )
+    with patch("subprocess.call", return_value=0) as call:
+        action.run(shell_path="global-shell")
+    assert call.call_args.args[0] == ["new-shell", "--eval", "script"]
+
+
 def test_action_shell_uses_explicit_arguments():
     """Explicit shell arguments are passed directly to the configured executable."""
     action = ActionCommand(

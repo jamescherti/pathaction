@@ -170,6 +170,7 @@ class ActionCommand(UserDict):
         schema.Optional("shell"): bool,
         schema.Optional("shell_path"): str,
         schema.Optional("shell_args"): [str],
+        schema.Optional("shell_command"): schema.And([str], len),
         schema.Optional("list_commands"): [
             schema.Or(str, [str])  # type: ignore
         ],
@@ -192,6 +193,14 @@ class ActionCommand(UserDict):
 
         schema_data = schema.Schema(ActionCommand.schema_action_command)
         schema_data.validate(action_dict)
+
+        if "shell_command" in action_dict and "shell_path" in action_dict:
+            print(
+                f"Warning: Both shell_command ({action_dict['shell_command']}) and "
+                f"shell_path ({action_dict['shell_path']}) are defined in an action. "
+                "shell_command takes precedence. Prefer shell_command.",
+                file=sys.stderr,
+            )
 
         self.clear()
         for item in (self.default_values, action_dict):
@@ -357,7 +366,12 @@ class ActionCommand(UserDict):
                 if stderr_path:
                     kwargs["stderr"] = stack.enter_context(stderr_path.open("wb"))
 
-                if shell and "shell_args" in self:
+                if shell and "shell_command" in self:
+                    errno = subprocess.call(
+                        [*self["shell_command"], str(cmd)],
+                        **kwargs,  # type: ignore
+                    )
+                elif shell and "shell_args" in self:
                     errno = subprocess.call(
                         [shell_path, *self["shell_args"], str(cmd)],
                         **kwargs,  # type: ignore

@@ -343,11 +343,12 @@ vars:
 
 options:
   timeout: 10
-  shell_path: /bin/sh
+  shell_command: ["/bin/sh", "-c"]
 
 actions:
   - path_match: "*.log"
     tags: main
+    # Changing shell to true uses shell_command
     shell: true
     command: "cat {{ file | quote }} | grep {{ grep_pattern | quote }} > {{ [cwd, 'log-summary.txt'] | joinpath | quote }}"
 ```
@@ -380,7 +381,7 @@ Note: MIME matchers use Python's `mimetypes.guess_type()` to infer a MIME type f
 
 ### Example 8: Action-Specific Overrides
 
-An action-level `timeout` and `shell_path` override their global values. An action-level `cwd` selects its working directory. This POSIX example uses Bash to run a command from the parent of the test file's directory.
+An action-level `timeout` and `shell_command` override their global values. An action-level `cwd` selects its working directory. This POSIX example uses Bash to run a command from the parent of the test file's directory.
 
 ```yaml
 ---
@@ -391,7 +392,7 @@ vars:
 
 options:
   timeout: 1
-  shell_path: /bin/sh
+  shell_command: ["/bin/sh", "-c"]
 
 actions:
   - path_match: "*_e2e.py"
@@ -399,7 +400,7 @@ actions:
     # Overrides the global timeout
     timeout: 300
     # Overrides the global shell path for this action.
-    shell_path: /bin/bash
+    shell_command: ["/bin/bash", "-c"]
     cwd: "{{ file|dirname }}/.."
     shell: true
     command: "echo \"Current dir: `pwd`\"; echo 'File:' {{ file | quote }}; echo Wait...; read v"
@@ -407,7 +408,7 @@ actions:
 
 ### Example 9: Use Python as an Action Shell
 
-An action can use `python3` from `PATH` as its shell. The action-level `shell_path` overrides the global shell path, and the multiline command is passed to Python for execution.
+An action can use `python3` from `PATH` as its interpreter. The action-level `shell_command` overrides the global shell path, and the multiline command is passed to Python for execution.
 
 ```yaml
 ---
@@ -417,7 +418,7 @@ actions:
   - path_match: "*"
     tags: install
     shell: true
-    shell_path: python3
+    shell_command: ["python3", "-c"]
     command: |
       import sys
       print("Hello world")
@@ -488,7 +489,8 @@ An action block can include the following optional attributes:
 - **`stdout`**: Write command stdout to a file, truncating it before each command. Parent directories must already exist.
 - **`stderr`**: Redirect command stderr with the same path and truncation rules as `stdout`.
 - **`shell`**: Execute through the configured shell when `true`. Defaults to `false`. Use a command string for shell syntax.
-- **`shell_path`**: Shell executable for this action when `shell: true`. Overrides the global `options.shell_path`; if omitted, the global value is used. Like other action strings, this value can contain Jinja2 templates.
+- **`shell_command`**: A non-empty list containing an executable and its arguments. With `shell: true`, the command is passed as the final argument to this executable directly. (Overrides the global `options.shell_path` and action-level `shell_path` and `shell_args`. If both `shell_command` and `shell_path` are defined in the same action, a warning recommends using `shell_command`.)
+- **`shell_path`**: Use `shell_command` instead. Shell executable for this action when `shell: true`. Overrides the global `options.shell_path`; if omitted, the global value is used. Like other action strings, this value can contain Jinja2 templates.
 - **`command`**: One command, expressed as a string or argument list. With `shell: false`, strings are split with `shlex.split` (`posix=True` on POSIX, `False` on Windows); argument lists are passed directly without shell expansion.
 - **`list_commands`**: A sequence of command strings or argument lists. Commands run sequentially in separate processes, stopping at the first nonzero exit status. Working-directory and shell state changes do not persist between commands. Mutually exclusive with `command`.
 
@@ -496,7 +498,7 @@ An action block can include the following optional attributes:
 
 A top-level `options` block specifies execution defaults:
 
-- **`shell_path`**: The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell on POSIX and `%COMSPEC%`, or `cmd.exe` if unset, on Windows). An action can override this value with its own `shell_path`. Enable `shell: true` for shell features such as pipes, redirection, or built-in commands. Otherwise, prefer `shell: false` with an argument list, especially on Windows, to avoid command-string parsing issues.
+- **`shell_path`**: Use `shell_command` instead. The absolute path to the shell executable used when `shell: true` (defaults to the user's login shell on POSIX and `%COMSPEC%`, or `cmd.exe` if unset, on Windows). An action can override this value with its own `shell_path`. Enable `shell: true` for shell features such as pipes, redirection, or built-in commands. Otherwise, prefer `shell: false` with an argument list, especially on Windows, to avoid command-string parsing issues.
 - **`verbose`**: Enable verbose logging.
 - **`debug`**: Enable debug mode.
 - **`timeout`**: Default timeout in seconds for each command. A value of 0 disables it. On expiration, the directly launched process is killed.
